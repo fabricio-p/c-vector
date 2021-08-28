@@ -48,6 +48,15 @@ int cvector_shrink(cvector_t *vec) {
 	return 0;
 }
 
+cvector_t cvector_clone(cvector_t *vec) {
+	cvector_t new_vec;
+	cvector_init(&new_vec, vec->item_size, vec->cap);
+	new_vec.print_item = vec->print_item;
+	new_vec.len = vec->len;
+	memcpy(new_vec.data, vec->data, new_vec.size);
+	return new_vec;
+}
+
 void cvector_cleanup(cvector_t *vec) {
 	if (vec != NULL) {
 		if (vec->data != NULL)
