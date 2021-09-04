@@ -1,0 +1,3 @@
+ - [x] Write usable vector implementation using struct and write tests for it.
+ - [x] Write usable vector implementation using fat-pointers and write tests for it.
+ - [ ] Updat  README

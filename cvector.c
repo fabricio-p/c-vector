@@ -1,6 +1,6 @@
 #include "cvector.h"
 
-#define ALIGN(s) (((s) + (ALIGNMENT) - 1) & ~((ALIGNMENT) - 1))
+#define ALIGN(s) (((s) + (CVECTOR_ALIGNMENT) - 1) & ~((ALIGNMENT) - 1))
 
 int cvector_init(cvector_t *vec, int item_size, int cap) {
 	vec->len = 0;
@@ -17,15 +17,9 @@ int cvector_init(cvector_t *vec, int item_size, int cap) {
 	return 0;
 }
 
-void *cvector_get(cvector_t *vec, int idx) {
-	if (idx >= vec->len)
-		return NULL;
-	return vec->data + idx * vec->item_size;
-}
-
 int cvector_expand(cvector_t *vec) {
 	int cap = vec->cap ? (vec->cap + (vec->cap & 0xff)) :
-			      ALIGNMENT;
+			      CVECTOR_ALIGNMENT;
 	int size = ALIGN(cap * vec->item_size);
 	void *data = realloc(vec->data, size);
 	if (data == NULL)
