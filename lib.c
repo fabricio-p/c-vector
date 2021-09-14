@@ -1,6 +1,7 @@
-#include "cvector.h"
+#include "lib.h"
 
-#define ALIGN(s) (((s) + (CVECTOR_ALIGNMENT) - 1) & ~((ALIGNMENT) - 1))
+#define ALIGN(s) (((s) + (CVECTOR_ALIGNMENT) - 1) & \
+					~((CVECTOR_ALIGNMENT) - 1))
 
 int cvector_init(cvector_t *vec, int item_size, int cap) {
 	vec->len = 0;

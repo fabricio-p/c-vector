@@ -2,3 +2,4 @@
 /test/*_test
 .*.sw*
 *~
+CUnitAutomated-Results.xml

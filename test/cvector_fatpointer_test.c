@@ -1,6 +1,6 @@
 #include "testing.h"
 #define CVECTOR_FATPOINTER
-#include "cvector.h"
+#include "lib.h"
 
 CVECTOR_WITH_NAME(char, StringBuffer);
 
@@ -65,6 +65,64 @@ void test_StringBuffer_pop(void) {
 	StringBuffer_cleanup(str);
 }
 
+#define CVECTOR_NO_TYPEDEF
+#include "lib.h"
+typedef struct Rocket  Rocket;
+typedef struct Rocket* Rockets;
+typedef struct Stage   Stage;
+typedef struct Stage*  Stages;
+typedef struct Engine  Engine;
+typedef struct Engine* Engines;
+
+struct Rocket {
+	char   *name;
+	int    weight_kg;
+	Stages stages;
+};
+struct Stage {
+	int     nth;
+	Engines engines;
+	int     weight_kg;
+	int     fuel_weight;
+};
+struct Engine {
+	char   *name;
+	float  isp;
+	int    weight;
+	float  f2o_r[2];
+};
+CVECTOR_WITH_NAME(Rocket, Rockets);
+CVECTOR_WITH_NAME(Stage, Stages);
+CVECTOR_WITH_NAME(Engine, Engines);
+
+void test_Rockets_new(void) {
+	Rockets rockets = Rockets_new();
+	CU_ASSERT_PTR_NOT_NULL_FATAL(rockets);
+	Rockets_cleanup(rockets);
+}
+void test_Rockets_with_capacity(void) {
+	Rockets rockets = Rockets_with_capacity(4);
+	CU_ASSERT_PTR_NOT_NULL_FATAL(rockets);
+	CU_ASSERT_EQUAL_FATAL(Rockets_len(rockets), 0);
+	CU_ASSERT_EQUAL_FATAL(Rockets_cap(rockets), 4);
+	Rockets_cleanup(rockets);
+}
+void test_Rockets_with_length(void) {
+	Rockets rockets = Rockets_with_length(5);
+	CU_ASSERT_PTR_NOT_NULL_FATAL(rockets);
+	CU_ASSERT_EQUAL_FATAL(Rockets_len(rockets), 5);
+	CU_ASSERT_EQUAL_FATAL(Rockets_cap(rockets), 5);
+	Rockets_cleanup(rockets);
+}
+void test_Rockets_with_fill(void) {
+	Rocket base_rocket = {
+		.name = "Falcon Heavy",
+		.weight_kg = 42000, // don't really know
+	};
+	Rockets rockets = Rockets_with_fill(1, base_rocket);
+}
+
+
 int main(int argc, char **argv) {
 	int status = 0;
 	CU_initialize_registry();
@@ -78,9 +136,17 @@ int main(int argc, char **argv) {
 		{ "pop",           test_StringBuffer_pop           },
 		CU_TEST_INFO_NULL
 	};
+	CU_TestInfo Rockets_tests[] = {
+		{ "new",           test_Rockets_new           },
+		{ "with_capacity", test_Rockets_with_capacity },
+		{ "with_length",   test_Rockets_with_length   },
+		CU_TEST_INFO_NULL
+	};
 	CU_SuiteInfo suites[] = {
 		{ "cvector<fatpointer>/StringBuffer",
 		  NULL, NULL, NULL, NULL, StringBuffer_tests },
+		{ "cvector<fatpointer>/Rockets",
+			NULL, NULL, NULL, NULL, Rockets_tests },
 		CU_SUITE_INFO_NULL
 	};
 	if ((status = CU_register_suites(suites)) != CUE_SUCCESS)

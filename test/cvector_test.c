@@ -1,4 +1,4 @@
-#include <cvector.h>
+#include "lib.h"
 #include <sys/random.h>
 #include <string.h>
 #include "testing.h"
@@ -29,7 +29,7 @@ void test_push(void) {
 }
 void test_set_at(void) {
 	IntVector_cleanup(&vec);
-	CU_ASSERT_EQUAL_FATAL(IntVector_init_with_fill(&vec, 4, 0), 0);
+	CU_ASSERT_EQUAL_FATAL(IntVector_init_with_length(&vec, 4), 0);
 	vec.print_item = (void (*)(void *))print_int;
 	int ints[4];
 	for (int i = 0; i < 4; i++)  {
@@ -51,20 +51,20 @@ void test_pop(void) {
 		CU_ASSERT_EQUAL_FATAL(IntVector_pop(&vec), 132);
 	}
 }
-void test_get(void) {
+void test_at(void) {
 	IntVector_cleanup(&vec);
-	CU_ASSERT_EQUAL_FATAL(IntVector_init_with_fill(&vec, 2, 0), 0);
+	CU_ASSERT_EQUAL_FATAL(IntVector_init_with_length(&vec, 2), 0);
 	vec.print_item = (void (*)(void *))print_int;
 
-	IntVector_set_at(&vec, 0, 7465);
-	IntVector_set_at(&vec, 1, 13237);
+	IntVector_set(&vec, 0, 7465);
+	IntVector_set(&vec, 1, 13237);
 
-	CU_ASSERT_PTR_EQUAL_FATAL(IntVector_get(&vec, 0), vec.data);
-	CU_ASSERT_PTR_EQUAL_FATAL(IntVector_get(&vec, 1),
+	CU_ASSERT_PTR_EQUAL_FATAL(IntVector_at(&vec, 0), vec.data);
+	CU_ASSERT_PTR_EQUAL_FATAL(IntVector_at(&vec, 1),
 	  vec.data + sizeof(int));
 
-	CU_ASSERT_EQUAL_FATAL(*IntVector_get(&vec, 0), 7465);
-	CU_ASSERT_EQUAL_FATAL(*IntVector_get(&vec, 1), 13237);
+	CU_ASSERT_EQUAL_FATAL(*IntVector_at(&vec, 0), 7465);
+	CU_ASSERT_EQUAL_FATAL(*IntVector_at(&vec, 1), 13237);
 }
 
 void test_clone(void) {
@@ -151,7 +151,7 @@ int main(int argc, char **argv) {
 		{ "push",   test_push   },
 		{ "set_at", test_set_at },
 		{ "pop",    test_pop    },
-		{ "get",    test_get    },
+		{ "at",	    test_at     },
 		{ "clone",  test_clone  },
 		CU_TEST_INFO_NULL
 	};
