@@ -14,6 +14,19 @@
 #ifdef TYPEDEF
 #undef TYPEDEF
 #endif
+#ifdef CVECTOR_WITH_NAME
+#undef CVECTOR_WITH_NAME
+#endif
+#ifdef CVECTOR_DECLARE_WITH_NAME
+#undef CVECTOR_DECLARE_WITH_NAME
+#endif
+#ifdef CVECTOR_DECLARE
+#undef CVECTOR_DECLARE
+#endif
+#ifdef CVECTOR
+#undef CVECTOR
+#endif
+
 
 #if defined(__cplusplus)
 #define __cvector_inline__ inline __attribute__((always_inline))
@@ -33,15 +46,17 @@
 
 #endif
 
-#ifndef CVECTOR_NO_TYPEDEF
-#define TYPEDEF(type, name) typedef type name
-#else
+#ifdef CVECTOR_NO_TYPEDEF
 #define TYPEDEF(_, __)
+#undef CVECTOR_NO_TYPEDEF
+#else
+#define TYPEDEF(type, name) typedef type name
 #endif
 
 
 #ifdef CVECTOR_FATPOINTER
 #undef CVECTOR_FATPOINTER
+
 #ifndef _CVECTOR_FATPOINTER_H_
 #define _CVECTOR_FATPOINTER_H_
 
@@ -96,6 +111,7 @@ int cvector_cap(void *vec) {
 		block;															\
 	}
 
+#endif /* _CVECTOR_FATPOINTER_H_ */
 
 #define CVECTOR_WITH_NAME(type, name)									\
 	TYPEDEF(type*, name);												\
@@ -179,7 +195,6 @@ int cvector_cap(void *vec) {
 	}
 
 
-#endif /* _CVECTOR_FATPOINTER_H_ */
 
 #else
 
@@ -206,16 +221,16 @@ cvector_t cvector_clone  (cvector_t *);
 void      cvector_cleanup(cvector_t *);
 
 __cvector_inline__
-CVECTOR_STATUS cvector_expand_if_needed(cvector_t *vec) {
+int cvector_expand_if_needed(cvector_t *vec) {
 	if (vec->len >= vec->cap)
-		CVECTOR_RETURN(cvector_expand(vec));
-	CVECTOR_RETURN(0);
+		return cvector_expand(vec);
+	return 0;
 }
 __cvector_inline__
-CVECTOR_STATUS cvector_shrink_if_needed(cvector_t *vec) {
+int cvector_shrink_if_needed(cvector_t *vec) {
 	if (vec->len * 3 <= vec->cap && vec->cap > CVECTOR_ALIGNMENT)
-		CVECTOR_RETURN(cvector_shrink(vec));
-	CVECTOR_RETURN(0);
+		return cvector_shrink(vec);
+	return 0;
 }
 __cvector_inline__
 void *cvector_get(cvector_t *vec, int idx) {
@@ -227,6 +242,8 @@ void *cvector_at(cvector_t *vec, int idx) {
 		idx = vec->len + idx;
 	return idx < 0 || idx >= vec->len ? cvector_get(vec, idx) : NULL;
 }
+
+#endif /* _CVECTOR_H_ */
 
 #define CVECTOR_DECLARE_WITH_NAME(type, name)						\
 	typedef cvector_t name;											\
@@ -337,10 +354,9 @@ void *cvector_at(cvector_t *vec, int idx) {
 		}															\
 	}
 
-#define CVECTOR_DEFINE(type)						\
-	CVECTOR_DEFINE_WITH_NAME(type, Vector_##name)
+#define CVECTOR_DECLARE(type)						\
+	CVECTOR_DECLARE_WITH_NAME(type, Vector_##name)
 
-#endif /* _CVECTOR_H_ */
 
 #endif /* CVECTOR_FATPOINTER */
 #define CVECTOR(type)								\

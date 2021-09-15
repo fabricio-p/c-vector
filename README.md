@@ -9,7 +9,7 @@ More experienced programmers who can see the truth, spend a long time implementi
 This project provides a general purpose implementation of the vector data structure which can be used almost everywhere.
 
 ## Configure with `#define`
-This library relies heavily on macros to replicate what templates and generics in C++ do. Although you can modify the output of the macros using some other macros as configurations. Due to not being able to nest `#ifdef` inside `#define`, other macros will be defined according to the `#define`d configuration macros.
+This library relies heavily on macros to replicate what templates and generics in C++ do. Although you can modify the output of the macros using some other macros as configurations. Due to not being able to nest `#ifdef` inside `#define`, other macros will be defined according to the `#define`d configuration macros. Remember not to nest configurations, as the inner one will erase all the others. Everytime you change you configuration macros, make sure to re`#include <c-vector/lib.h>`. Also be sure to reconfigure and reinclude after using other libraries that use c-vector.
 ## Silent mode
 Activated if you `#define CVECTOR_SILENT`.
 Specific functions will by default return a status integer to indicate success of the function. `0` for ok and `1` if it didn't work. This is defined by the macros `CVECTOR_STATUS` and `CVECTOR_RETURN(expr)`, which by default will translate to `int` and `{ return expr; }`. This is called verbose mode. If `CVECTOR_SILENT` is defined, they will be translated to `void` and `{ expr; return; }`. This is called silent mode. It evaluates `expr` because sometimes it will return the status from another function call, which will also be silent, but the call needs to be done.
