@@ -17,10 +17,11 @@ Specific functions will by default return a status integer to indicate success o
 ## Struct mode
 This mode is the default. In this mode, a struct is used to store the data. This mode can be more flexible and the struct allows a more general purpose usage. It is also good if you want to print the items of the vector.
 All the functions take the pointer of the `cvector_t` struct. It's a pointer to prevent memory copying.
+
 ### Functions and structs
 
 #### cvector\_t: struct
-A general purpose struct containing the metadata of the vector.
+A struct representing the vector and holding it's metadata.
  - `int item_size`: The size of the array's item. Used for indexing. **DO NOT** modify.
  - `int cap`: The capacity of the array. **DO NOT** modify.
  - `int len`: The number of items the array has. **DO NOT** modify.
@@ -57,17 +58,13 @@ Gets the item at the specified index without bounds check.
 `realloc`ates more memory for more items.
   - Arguments:
     - `cvector_t *vec`: -
-  - Return:
-    - Verbose mode(`int`): `0` if the reallocation succeded, othewise `1`.
-    - Silent mode(`void`)
+  - Return(`int`): `0` if the reallocation succeded, othewise `1`.
 
 #### cvector\_shrink
 Shrinks the allocated memory by half.
   - Arguments:
     - `cvector_t *vec`: -
-  - Return:
-    - Verbose mode(`int`): `0` if the reallocation succeded, othewise `1`.
-    - Silent mode(`void`)
+  - Return(`int`): `0` if the reallocation succeded, othewise `1`.
 
 #### cvector\_expand\_if\_needed
 Expands the vector if `len >= cap`.
@@ -198,4 +195,74 @@ int main(void) {
   return 0;
 }
 ```
-<!-- ## Fat-pointer mode -->
+## Fat-pointer mode
+This mode is activated if you `#define CVECTOR_FATPOINTER`.
+In this mode a pointer is used instead of a struct, which points at the data. The metadata, like the length and the capacity are stored right as a header right before the address where the pointer points to. This mode is more suited for efficiency and speed, as oposed to [struct mode](#Struct-mode) which is more suited to practical and general purpose use. Also you can use the `[]` syntax to access the items of the vector.
+
+### Functions and structs
+
+#### cvector\_header: struct
+The struct that holds the metadata of the vector, embeded before the vector's data.
+  - `int cap`: The capacity of the vector.
+  - `int len`: The number of items the vector has.
+
+#### cvector\_get\_header
+  - Arguments:
+    - `void *vec`: The vector.
+  - Return(`cvector_header *`): The pointer to the vector's metadata.
+
+#### cvector\_expand
+  - Arguments:
+    - `void *vec`: The vector.
+  - Return: The same as [cvector\_expand of struct-mode](#cvector_expand).
+
+#### cvector\_shrink
+  - Arguments:
+    - `void *vec`: The vector.
+  - Return: The same as [cvector\_shrink of struct-mode](#cvector_shrink).
+
+#### cvector\_len
+  - Arguments:
+    - `void *vec`: The vector.
+  - Return(`int`): The length of the vector.
+
+#### cvector\_cap
+  - Arguments:
+    - `void *vec`: The vector.
+  - Return(`int`): The capacity of the vector.
+
+### Macros
+
+#### CVECTOR\_WITH\_NAME
+##### Arguments
+  - `type`: The type of the items.
+  - `name`: The name of the vector type which is also used to identify which functions are for which type of vector, just like in [struct-mode](#Struct-mode).
+
+##### Output
+  - `typedef type* name;` if `CVECTOR_NO_TYPEDEF` is not defined, otherwise nothing.
+  - `name name##_new()`:
+      Allocates a vector with 0 items and capacity (empty). Will return `NULL` if the allocation fails.
+  - `name name##_with_capacity(int cap)`:
+      Allocates and initializes a vector with an initial capacity.
+  - `name name##_with_length(int len)`:
+      Allocates and initializes a vector with initial capacity and length. All the items are `0`'d.
+  - `name name##_with_fill(int len, type val)`:
+      Like `name##_with_length`, except you specify the initial value of all the items instead of them being `0`'d.
+  - `int name##_len(name vec)`:
+      Calls and returns the return of [cvector\_len](#cvector_len).
+  - `int name##_cap(name vec)`:
+      Calls and returns tbe return of [cvector\_cap](#cvector_cap).
+  - `int name##_expand_if_needed(name *vec)`:
+      Works like [cvector\_expand\_if\_needed from struct-mode](#cvector_expand_if_needed). It is a double pointer (remember,  `name = type *`, so `name * = type **`) because it points to the variable that holds the address of the vector's data because it might reallocate and if it doesn't modify the address variable, you would end up with an invalid pointer. You don't need to worry since you don't need or have to use it.
+  - `int name##_shrink_if_needed(name *vec)`:
+      Works likr [cvector\_shrink\_if\_needed from struct-mode](#cvector_shrink_if_needed), but will shrink if if the length is less than 1/3 of the capacity.
+  - `type *name##_at(name vec, int idx)`:
+      Works like `name##_at` from struct-mode.
+  - `CVECTOR_STATUS name##_set(name vec, int id, type val)`:
+      Works like `name##_set_at` from struct-mode.
+  - `CVECTOR_STATUS name##_push(name *vec, type val)`:
+      Works like `name##_push` from struct-mode. It takes a double pointer(rember that `name = type *`, so `name * = type **`) because it might reallocate the vector. In that case it will set the variable to point to the new address.
+  - `type name##_pop(name *vec)`:
+      Works like `name##_pop` from struct-mode, but just like `name##_push`, it might reallocate(the vector can be shrinked) so it needs the pointer to the vector variable.
+  - `void name##_cleanup(name vec)`:
+      Will free the vector.
