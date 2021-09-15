@@ -2,6 +2,19 @@
 #include <malloc.h>
 #include <stddef.h>
 
+#ifdef __cvector_inline__
+#undef __cvector_inline__
+#endif
+#ifdef CVECTOR_RETURN
+#undef CVECTOR_RETURN
+#endif
+#ifdef CVECTOR_STATUS
+#undef CVECTOR_STATUS
+#endif
+#ifdef TYPEDEF
+#undef TYPEDEF
+#endif
+
 #if defined(__cplusplus)
 #define __cvector_inline__ inline __attribute__((always_inline))
 #else
@@ -20,10 +33,6 @@
 
 #endif
 
-#ifdef TYPEDEF
-#undef TYPEDEF
-#endif
-
 #ifndef CVECTOR_NO_TYPEDEF
 #define TYPEDEF(type, name) typedef type name
 #else
@@ -32,7 +41,7 @@
 
 
 #ifdef CVECTOR_FATPOINTER
-
+#undef CVECTOR_FATPOINTER
 #ifndef _CVECTOR_FATPOINTER_H_
 #define _CVECTOR_FATPOINTER_H_
 
