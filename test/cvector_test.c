@@ -3,7 +3,6 @@
 #include <string.h>
 #include "testing.h"
 
-CVECTOR_DECLARE_WITH_NAME(int, IntVector);
 CVECTOR_WITH_NAME(int, IntVector);
 
 static IntVector vec;
@@ -96,7 +95,6 @@ typedef struct {
 	int  age;
 } Person;
 
-CVECTOR_DECLARE_WITH_NAME(Person, People);
 CVECTOR_WITH_NAME(Person, People);
 
 Person clone_person(Person *person) {

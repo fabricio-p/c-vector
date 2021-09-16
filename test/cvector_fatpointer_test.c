@@ -65,6 +65,7 @@ void test_StringBuffer_pop(void) {
 	StringBuffer_cleanup(str);
 }
 
+#define CVECTOR_FATPOINTER
 #define CVECTOR_NO_TYPEDEF
 #include "lib.h"
 typedef struct Rocket  Rocket;

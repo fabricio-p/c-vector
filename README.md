@@ -84,10 +84,10 @@ Calls [cvector\_shrink](#cvector_shrink) if `len < cap / 2`
 `free`s the allocated memory and `0`s all the struct's fields.
 
 ### Macros
-The macros [CVECTOR\_DECLARE\_WITH\_NAME](#CVECTOR_DECLARE_WITH_NAME) and [CVECTOR\_WITH\_NAME](#CVECTOR_WITH_NAME) could have been a single macro, but the first one is made to be used in a header file and the second to be used in a source file. The reason is that if you have multiple source files and want them to have the same definition, you will end up having link time conflicts. That's why it's better to use the first one on a header file and the second on a source file. If you are going to use it only in one place, use both of them one after the other. In the future I can make all of them inline, so that you only need to do that once.
-#### ALIGNMENT
+
+#### CVECTOR\_ALIGNMENT
 The alignment of the size that will be `malloc`'d. Defaults to `sizeof(size_t)`.
-#### CVECTOR\_DECLARE\_WITH\_NAME
+#### CVECTOR\_WITH\_NAME
 ##### Arguments
   - `type`: The type of the items.
   - `name`: An identifier that will be used in the start of the emited functions' names.
@@ -105,7 +105,6 @@ The alignment of the size that will be `malloc`'d. Defaults to `sizeof(size_t)`.
   - `CVECTOR_STATUS name##_push(name *vec, type val)`:
       Push item at the end of the vector. If in verbose mode and pushing the value fails, it will return 1, otherwise 0.
   - `type name##_pop(name *vec)`:
-      The function prototype.
       Removes and return the last item of the vector. If the vector is empty, an empty value is returned.
   - `type *name##_at(name *vec, int idx)`:
       Works like [cvector\_at](#cvector_at).
@@ -114,15 +113,12 @@ The alignment of the size that will be `malloc`'d. Defaults to `sizeof(size_t)`.
   - `void name##_set(name *vec, int idx, type value)`
       Gives the item at the specified index the value you provide as the 3rd argument. Does not do bound checking, so be careful not to corrupt memory.
   - `CVECTOR_STATUS name##_set_at(name *vec, int idx, type value)`:
-      The function prototype.
       Works like `name##_set`, but in verbose mode, returns o1 if out of bounds and 0 if ok.
   - `name name##_clone(name *vec)`:
       Creates and returns a new identical vector, but with the items copied on another place.
   - `name name##_deep_clone(name *vec, type (*cloner)(type *))`:
-      The function prototype.
       This is more like a map function. It creates a new vector, and uses the function to clone each of the items, which are pushed to the new vector.
   - `void name##_print(name *vec)`:
-      The function prototype.
       Nicely prints the vector data and it's values. The `print_item` field of the [cvector\_t](#cvector_t) struct needs to be set so it can print the items.
   - `void name##_cleanup`:
       Calls [cvector\_cleanup](#cvector_cleanup).
@@ -131,18 +127,12 @@ The alignment of the size that will be `malloc`'d. Defaults to `sizeof(size_t)`.
   `Foo_init`,
   `Foo_push`, etc...
 
-#### CVECTOR\_WITH\_NAME
-  - Arguments: Same as [CVECTOR\_DECLARE\_WITH\_NAME](#CVECTOR_DECLARE_WITH_NAME).
-##### Output
-The bodies of the function prototypes generated from [CVECTOR\_DECLARE\_WITH\_NAME](#CVECTOR_DECLARE_WITH_NAME).
-
 ### Usage
 Using the macros and the functions they generate.
 ```c
 #include <stdio.h>
 #include <c-vector/lib.h>
 
-CVECTOR_DECLARE_WITH_NAME(int, IntVector);
 CVECTOR_WITH_NAME(int, IntVector);
 
 void print_int(int *ptr) { printf("%d", *ptr); }
