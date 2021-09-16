@@ -266,3 +266,61 @@ The struct that holds the metadata of the vector, embeded before the vector's da
       Works like `name##_pop` from struct-mode, but just like `name##_push`, it might reallocate(the vector can be shrinked) so it needs the pointer to the vector variable.
   - `void name##_cleanup(name vec)`:
       Will free the vector.
+
+### Example
+Enabling [fat-pointer mode](#Fat-pointer-mode) and defining a new vector type and it's functions.
+```c
+#define CVECTOR_FATPOINTER
+#include <c-vector/lib.h>
+
+CVECTOR_WITH_NAME(double, F64Vector);
+```
+
+#### Different ways of creating a new vector
+Empty:
+```c
+  F64Vector vec = F64Vector_new();
+```
+With initial capacity:
+```c
+  F64Vector vec = F64Vector_with_capacity(5);
+```
+With initial length, all items are `0`'d:
+```c
+  F64Vector vec = F64Vector_with_length(8);
+```
+With initial length and item initial value:
+```c
+  F64Vector vec = F64_with_fill(3, 4.085793);
+```
+
+#### Operating on the vector
+Pushing:
+```c
+  F64Vector_push(&vec, 3.65);
+```
+Popping:
+```c
+  printf("%f\n", F64Vector_pop(&vec));
+```
+Unchecked item access:
+```c
+  vec[2] = 4.546;
+  printf("%f\n", vec[1]);
+```
+Checked item access:
+```c
+  // If you didn't define CVECTOR_SILENT, it will return int(0)
+  assert(!F64Vector_set(vec, 2, 4.546));
+  assert(F64Vector_at(vec, 1)); // Will return the pointer to that if the index is not out of bounds.
+  printf("%f\n", *F64Vector_at(vec, 1));
+```
+Getting the length and the capacity:
+```c
+  printf("len: %d\n"
+         "cap: %d\n", F64Vector_len(vec), F64Vector_cap(vec));
+```
+And finally, freeing:
+```c
+  F64Vector_cleanup(vec);
+```
