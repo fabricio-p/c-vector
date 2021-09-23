@@ -6,7 +6,7 @@ Who needs fancy generics like C++ for `std::vector` when you have the good old p
 ## But, why?
 Beginers usually prefer C++ over C because they see C++ easier and C++ has a lot of things built in. That is not true. Being fancier is not being easier. Things like classes, namespaces, inheritance, polymorphism, constructors, virtual, friend, public and private methods, `this`, `new`, `delete` and many others are just more things to remember that make the codebase complicated and messed up. Why do you think compiling C++ is slower?
 More experienced programmers who can see the truth, spend a long time implementing utilities that they need for their program.
-This project provides a general purpose implementation of the vector data structure which can be used almost everywhere.
+This library provides macros that generate type-specific vector implementations in the form of functions.
 
 ## Configure with `#define`
 This library relies heavily on macros to replicate what templates and generics in C++ do. Although you can modify the output of the macros using some other macros as configurations. Due to not being able to nest `#ifdef` inside `#define`, other macros will be defined according to the `#define`d configuration macros. Remember not to nest configurations, as the inner one will erase all the others. Everytime you change you configuration macros, make sure to re`#include <c-vector/lib.h>`. Also be sure to reconfigure and reinclude after using other libraries that use c-vector.
@@ -206,17 +206,17 @@ The struct that holds the metadata of the vector, embeded before the vector's da
     - `void *vec`: The vector.
   - Return: The same as [cvector\_expand of struct-mode](#cvector_expand).
 
-#### cvector\_shrink
+#### cvectorf\_shrink
   - Arguments:
     - `void *vec`: The vector.
   - Return: The same as [cvector\_shrink of struct-mode](#cvector_shrink).
 
-#### cvector\_len
+#### cvectorf\_len
   - Arguments:
     - `void *vec`: The vector.
   - Return(`int`): The length of the vector.
 
-#### cvector\_cap
+#### cvectorf\_cap
   - Arguments:
     - `void *vec`: The vector.
   - Return(`int`): The capacity of the vector.
@@ -254,6 +254,10 @@ The struct that holds the metadata of the vector, embeded before the vector's da
       Works like `name##_push` from struct-mode. It takes a double pointer(rember that `name = type *`, so `name * = type **`) because it might reallocate the vector. In that case it will set the variable to point to the new address.
   - `type name##_pop(name *vec)`:
       Works like `name##_pop` from struct-mode, but just like `name##_push`, it might reallocate(the vector can be shrinked) so it needs the pointer to the vector variable.
+  - `name##_clone(name vec)`:
+      Works like `name##_clone` from struct-mode.
+  - `name##_deep_clone(name vec, type (*cloner)(type *))`:
+      Works like `name##_deep_clone` from struct-mode.
   - `void name##_cleanup(name vec)`:
       Will free the vector.
 
