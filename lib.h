@@ -70,9 +70,18 @@ cvector_header *cvector_get_header(void *vec) {
 	return (cvector_header *)(vec - sizeof(cvector_header));
 }
 __cvector_inline__
+int cvectorf_len(void *vec) {
+	return cvector_get_header(vec)->len;
+}
+__cvector_inline__
+int cvectorf_cap(void *vec) {
+	return cvector_get_header(vec)->cap;
+}
+__cvector_inline__
 int cvectorf_expand(void **vec, int item_size) {
 	int cap = cvector_get_header(*vec)->cap;
-	cap += cap == 0 ? 4 : ((cap & 0xff) & ~1);
+	cap = cap ? cap << 1 : 4;
+	if (cap < cvectorf_cap(*vec)) return 2;
 	int size = sizeof(cvector_header) + cap * item_size;
 	void *data = realloc(*vec - sizeof(cvector_header), size);
 	if (data == NULL)
@@ -93,16 +102,6 @@ int cvectorf_shrink(void **vec, int item_size) {
 	cvector_header *header = data;
 	header->cap = cap;
 	return 0;
-}
-
-__cvector_inline__
-int cvectorf_len(void *vec) {
-	return cvector_get_header(vec)->len;
-}
-
-__cvector_inline__
-int cvectorf_cap(void *vec) {
-	return cvector_get_header(vec)->cap;
 }
 
 #define FOREACH(itemtype, varname, vec, block)							\
@@ -190,6 +189,22 @@ int cvectorf_cap(void *vec) {
 		return val;														\
 	}																	\
 	__cvector_inline__													\
+	name name##_clone(name vec) {										\
+		name clone = name##_with_capacity(name##_cap(vec));				\
+		if (clone == NULL) return NULL;									\
+		cvector_get_header(vec)->len = name##_len(vec);					\
+		memcpy(clone, vec, name##_len(vec) * sizeof(type));				\
+		return clone;													\
+	}																	\
+	__cvector_inline__													\
+	name name##_deep_clone(name vec, type (*cloner)(type *)) {			\
+		name clone = name##_with_capacity(name##_cap(vec));				\
+		if (clone == NULL) return NULL;									\
+		cvector_get_header(vec)->len = name##_len(vec);					\
+		FOREACH(type, item, vec, clone[i] = cloner(item));				\
+		return clone;													\
+	}																	\
+	__cvector_inline__													\
 	void name##_cleanup(name vec) {										\
 		free((void *)vec - sizeof(cvector_header));						\
 	}
@@ -202,7 +217,7 @@ int cvectorf_cap(void *vec) {
 #define _CVECTOR_H_
 
 #ifndef CVECTOR_ALIGNMENT
-#define CVECTOR_ALIGNMENT (int)sizeof(size_t)
+#define CVECTOR_ALIGNMENT ((int)sizeof(size_t))
 #endif
 #define CVECTOR_ALIGN(s) (((s) + (CVECTOR_ALIGNMENT) - 1) & \
 							~((CVECTOR_ALIGNMENT) - 1))
@@ -233,8 +248,7 @@ int cvector_init(cvector_t *vec, int item_size, int cap) {
 }
 __cvector_inline__
 int cvector_expand(cvector_t *vec) {
-	int cap = vec->cap ? (vec->cap + (vec->cap & 0xff)) :
-			      CVECTOR_ALIGNMENT;
+	int cap = vec->cap ? vec->cap << 1 : CVECTOR_ALIGNMENT;
 	int size = CVECTOR_ALIGN(cap * vec->item_size);
 	void *data = realloc(vec->data, size);
 	if (data == NULL)
