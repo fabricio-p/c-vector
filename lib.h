@@ -26,6 +26,12 @@
 #ifdef CVECTOR
 #undef CVECTOR
 #endif
+#ifdef CVECTOR_HEAP_STRUCT_GEN
+#undef CVECTOR_HEAP_STRUCT_GEN
+#endif
+#ifdef CVECTOR_FATPOINTER_COMPAT_GEN
+#undef CVECTOR_FATPOINTER_COMPAT_GEN
+#endif
 
 
 #if defined(__cplusplus)
@@ -35,15 +41,11 @@
 #endif
 
 #ifndef CVECTOR_SILENT
-
 #define CVECTOR_RETURN(expr) { return expr; }
 #define CVECTOR_STATUS int
-
 #else
-
 #define CVECTOR_RETURN(expr) { expr; return; }
 #define CVECTOR_STATUS void
-
 #endif
 
 #ifdef CVECTOR_NO_TYPEDEF
@@ -53,6 +55,61 @@
 #define TYPEDEF(type, name) typedef type name
 #endif
 
+#ifdef CVECTOR_HEAP_STRUCT
+#undef CVECTOR_HEAP_STRUCT
+#define CVECTOR_HEAP_STRUCT_GEN(type, name)				\
+	__cvector_inline__									\
+	name *name##_new() {								\
+		name *vec = malloc(sizeof(name));				\
+		if (vec == NULL) return NULL;					\
+		return name##_init(vec) ? NULL : vec;			\
+	}													\
+	__cvector_inline__									\
+	name *name##_with_capacity(int cap) {				\
+		name *vec = malloc(sizeof(name));				\
+		if (vec == NULL) return NULL;					\
+		return name##_init_with_capacity(vec, cap) ?	\
+			   NULL : vec;								\
+	}													\
+	__cvector_inline__									\
+	name *name##_with_length(int len) {					\
+		name *vec = malloc(sizeof(name));				\
+		if (vec == NULL) return NULL;					\
+		return name##_init_with_length(vec, len) ?		\
+			   NULL : vec;								\
+	}													\
+	name *name##_with_fill(int len, type val) {			\
+		name *vec = malloc(sizeof(name));				\
+		if (vec == NULL) return NULL;					\
+		return name##_init_with_fill(vec, len, val) ?	\
+			   NULL : vec;								\
+	}
+#else
+#define CVECTOR_HEAP_STRUCT_GEN(type, name)
+#endif /* CVECTOR_HEAP_STRUCT */
+
+#ifdef CVECTOR_FATPOINTER_COMPAT
+#undef CVECTOR_FATPOINTER_COMPAT
+#define CVECTOR_FATPOINTER_COMPAT_GEN(type, name)						\
+	__cvector_inline__													\
+	CVECTOR_STATUS name##_init(name *vec) {								\
+		CVECTOR_RETURN((*name = name##_new()) ? 0 : 1);					\
+	}																	\
+	__cvector_inline__													\
+	CVECTOR_STATUS name##_init_with_capacity(name *vec, int cap) {		\
+		CVECTOR_RETURN((*name = name##_with_capacity(cap)) ? 0 : 1);	\
+	}																	\
+	__cvector_inline__													\
+	CVECTOR_STATUS name##_init_with_length(name *vec, int len) {		\
+		CVECTOR_RETURN((*name = name##_with_length(len)) ? 0 : 1);		\
+	}																	\
+	__cvector_inline__													\
+	CVECTOR_STATUS name##_init_with_fill(name *vec, int len, type val) {\
+		CVECTOR_RETURN((*name = name##_with_fill(len, val)) ? 0 : 1);	\
+	}
+#else
+#define CVECTOR_FATPOINTER_COMPAT_GEN(type, name)
+#endif /* CVECTOR_FATPOINTER_COMPAT */
 
 #ifdef CVECTOR_FATPOINTER
 #undef CVECTOR_FATPOINTER
@@ -138,6 +195,7 @@ int cvectorf_shrink(void **vec, int item_size) {
 		});																\
 		return vec;														\
 	}																	\
+	CVECTOR_FATPOINTER_COMPAT_GEN(type, name)							\
 	__cvector_inline__													\
 	name name##_new() {													\
 		return name##_with_capacity(0);									\
@@ -347,6 +405,7 @@ void *cvector_at(cvector_t *vec, int idx) {
 		}															\
 		CVECTOR_RETURN(0);											\
 	}																\
+	CVECTOR_HEAP_STRUCT_GEN(type, name)								\
 	__cvector_inline__												\
 	type *name##_at(name *vec, int idx) {							\
 		return (type *)cvector_at(vec, idx);						\
