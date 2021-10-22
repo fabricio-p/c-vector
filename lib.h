@@ -117,6 +117,10 @@
 #ifndef _CVECTOR_FATPOINTER_H_
 #define _CVECTOR_FATPOINTER_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
 	int cap;
 	int len;
@@ -127,18 +131,18 @@ cvector_header *cvector_get_header(void *vec) {
 	return (cvector_header *)(vec - sizeof(cvector_header));
 }
 __cvector_inline__
-int cvectorf_len(void *vec) {
+int cvectorp_len(void *vec) {
 	return cvector_get_header(vec)->len;
 }
 __cvector_inline__
-int cvectorf_cap(void *vec) {
+int cvectorp_cap(void *vec) {
 	return cvector_get_header(vec)->cap;
 }
 __cvector_inline__
-int cvectorf_expand(void **vec, int item_size) {
+int cvectorp_expand(void **vec, int item_size) {
 	int cap = cvector_get_header(*vec)->cap;
 	cap = cap ? cap << 1 : 4;
-	if (cap < cvectorf_cap(*vec)) return 2;
+	if (cap < cvectorp_cap(*vec)) return 2;
 	int size = sizeof(cvector_header) + cap * item_size;
 	void *data = realloc(*vec - sizeof(cvector_header), size);
 	if (data == NULL)
@@ -149,7 +153,7 @@ int cvectorf_expand(void **vec, int item_size) {
 	return 0;
 }
 __cvector_inline__
-int cvectorf_shrink(void **vec, int item_size) {
+int cvectorp_shrink(void **vec, int item_size) {
 	int cap = cvector_get_header(*vec)->cap / 2;
 	int size = sizeof(cvector_header) + cap * item_size;
 	void *data = realloc(*vec - sizeof(cvector_header), size);
@@ -161,8 +165,12 @@ int cvectorf_shrink(void **vec, int item_size) {
 	return 0;
 }
 
+#ifdef __cplusplus
+};
+#endif
+
 #define FOREACH(itemtype, varname, vec, block)							\
-	for (int i = 0; i < cvectorf_len(vec); i++) {						\
+	for (int i = 0; i < cvectorp_len(vec); i++) {						\
 		itemtype *varname = &vec[i];									\
 		block;															\
 	}
@@ -202,21 +210,21 @@ int cvectorf_shrink(void **vec, int item_size) {
 	}																	\
 	__cvector_inline__													\
 	int name##_cap(name vec) {											\
-		return cvectorf_cap(vec);										\
+		return cvectorp_cap(vec);										\
 	}																	\
 	__cvector_inline__													\
 	int name##_len(name vec) {											\
-		return cvectorf_len(vec);										\
+		return cvectorp_len(vec);										\
 	}																	\
 	__cvector_inline__													\
 	int name##_expand_if_needed(name *vec) {							\
 		return name##_len(*vec) >= name##_cap(*vec) ?					\
-				cvectorf_expand((void **)vec, sizeof(type)) : 0;		\
+				cvectorp_expand((void **)vec, sizeof(type)) : 0;		\
 	}																	\
 	__cvector_inline__													\
 	int name##_shrink_if_needed(name *vec) {							\
 		return name##_len(*vec) * 3 <= name##_cap(*vec) ?				\
-				cvectorf_shrink((void **)vec, sizeof(type)) : 0;		\
+				cvectorp_shrink((void **)vec, sizeof(type)) : 0;		\
 	}																	\
 	__cvector_inline__													\
 	type *name##_at(name vec, int idx) {								\
@@ -279,6 +287,10 @@ int cvectorf_shrink(void **vec, int item_size) {
 #endif
 #define CVECTOR_ALIGN(s) (((s) + (CVECTOR_ALIGNMENT) - 1) & \
 							~((CVECTOR_ALIGNMENT) - 1))
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct {
 	int  item_size;
@@ -370,6 +382,10 @@ void *cvector_at(cvector_t *vec, int idx) {
 		idx = vec->len - ~idx - 1;
 	return idx < 0 || idx >= vec->len ? NULL : cvector_get(vec, idx);
 }
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* _CVECTOR_H_ */
 

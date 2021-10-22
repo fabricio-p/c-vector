@@ -15,7 +15,7 @@ Activated if you `#define CVECTOR_SILENT`.
 Specific functions will by default return a status integer to indicate success of the function. `0` for ok and `1` if it didn't work. This is defined by the macros `CVECTOR_STATUS` and `CVECTOR_RETURN(expr)`, which by default will translate to `int` and `{ return expr; }`. This is called verbose mode. If `CVECTOR_SILENT` is defined, they will be translated to `void` and `{ expr; return; }`. This is called silent mode. It evaluates `expr` because sometimes it will return the status from another function call, which will also be silent, but the call needs to be done.
 
 ## Struct mode
-This mode is the default. In this mode, a struct is used to store the data. This mode can be more flexible and the struct allows a more general purpose usage. It is also good if you want to print the items of the vector.
+This mode is the default. In this mode, a struct is used to store the data. This mode ia faster to push and pop and the struct allows a more general purpose usage. It is also good if you want to print the items of the vector.
 All the functions take the pointer of the `cvector_t` struct. It's a pointer to prevent memory copying.
 
 ### Functions and structs
@@ -176,7 +176,7 @@ int main(void) {
    */
 
    // You can clone the vector. They will have the same data, but modifying any of them won't affect the other, because they're separate. 
-   // You can create as much clones as your memoru fits.
+   // You can create as much clones as your memory fits.
    IntVector vec_clone = InVector_clone(&vec);
    // Be sure to clean up all the vectors after you finish working with them, or you'll have memory leaks.
    IntVector_cleanup(&vec);
@@ -185,9 +185,9 @@ int main(void) {
   return 0;
 }
 ```
-## Fat-pointer mode
+## Pointer mode
 This mode is activated if you `#define CVECTOR_FATPOINTER`.
-In this mode a pointer is used instead of a struct, which points at the data. The metadata, like the length and the capacity are stored right as a header right before the address where the pointer points to. This mode is more suited for efficiency and speed, as oposed to [struct mode](#Struct-mode) which is more suited to practical and general purpose use. Also you can use the `[]` syntax to access the items of the vector.
+In this mode a pointer is used instead of a struct, which points at the data. The metadata, like the length and the capacity are stored right as a header right before the address where the pointer points to. This mode is more suited for practical use, like being able to use the square brackets to access items, as oposed to [struct mode](#Struct-mode).
 
 ### Functions and structs
 
@@ -206,17 +206,17 @@ The struct that holds the metadata of the vector, embeded before the vector's da
     - `void *vec`: The vector.
   - Return: The same as [cvector\_expand of struct-mode](#cvector_expand).
 
-#### cvectorf\_shrink
+#### cvectorp\_shrink
   - Arguments:
     - `void *vec`: The vector.
   - Return: The same as [cvector\_shrink of struct-mode](#cvector_shrink).
 
-#### cvectorf\_len
+#### cvectorp\_len
   - Arguments:
     - `void *vec`: The vector.
   - Return(`int`): The length of the vector.
 
-#### cvectorf\_cap
+#### cvectorp\_cap
   - Arguments:
     - `void *vec`: The vector.
   - Return(`int`): The capacity of the vector.
@@ -262,7 +262,7 @@ The struct that holds the metadata of the vector, embeded before the vector's da
       Will free the vector.
 
 ### Example
-Enabling [fat-pointer mode](#Fat-pointer-mode) and defining a new vector type and it's functions.
+Enabling [pointer mode](#Pointer-mode) and defining a new vector type and it's functions.
 ```c
 #define CVECTOR_FATPOINTER
 #include <c-vector/lib.h>
