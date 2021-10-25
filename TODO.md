@@ -1,3 +1,7 @@
  - [x] Write usable vector implementation using struct and write tests for it.
  - [x] Write usable vector implementation using fat-pointers and write tests for it.
- - [ ] Updat  README
+ - [x] Update  README.
+ - [ ] Write more doc about newish features.
+ - [ ] Make autoshrink optional and document it.
+ - [ ] Add functions like slice, pop\_at, push\_front and document them.
+ - [ ] Make configurable allocator for CVECTOR\_POINTERMODE\_COMPAT and document it.

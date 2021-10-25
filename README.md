@@ -186,7 +186,7 @@ int main(void) {
 }
 ```
 ## Pointer mode
-This mode is activated if you `#define CVECTOR_FATPOINTER`.
+This mode is activated if you `#define CVECTOR_POINTERMODE`.
 In this mode a pointer is used instead of a struct, which points at the data. The metadata, like the length and the capacity are stored right as a header right before the address where the pointer points to. This mode is more suited for practical use, like being able to use the square brackets to access items, as oposed to [struct mode](#Struct-mode).
 
 ### Functions and structs
@@ -264,7 +264,7 @@ The struct that holds the metadata of the vector, embeded before the vector's da
 ### Example
 Enabling [pointer mode](#Pointer-mode) and defining a new vector type and it's functions.
 ```c
-#define CVECTOR_FATPOINTER
+#define CVECTOR_POINTERMODE
 #include <c-vector/lib.h>
 
 CVECTOR_WITH_NAME(double, F64Vector);
