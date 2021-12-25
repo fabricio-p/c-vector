@@ -42,13 +42,13 @@ void test_set_at(void) {
     CU_ASSERT_EQUAL_FATAL(*ptr, ints[i]);
   }
 }
-void test_pop(void) {
+void test_pop_shrink_get(void) {
   IntVector_cleanup(&vec);
   CU_ASSERT_EQUAL_FATAL(IntVector_init_with_fill(&vec, 4, 132), 0);
   vec.print_item = (void (*)(void *))print_int;
 
   while (vec.len) {
-    CU_ASSERT_EQUAL_FATAL(IntVector_pop(&vec), 132);
+    CU_ASSERT_EQUAL_FATAL(IntVector_pop_shrink_get(&vec), 132);
   }
 }
 void test_at(void) {
@@ -98,6 +98,10 @@ typedef struct {
 
 CVECTOR_WITH_NAME(Person, People);
 
+void print_person(Person *person) {
+  printf("Person { name: %s, age: %d }", person->name, person->age);
+}
+
 Person clone_person(Person *person) {
   Person new_person;
   new_person.name = strdup(person->name);
@@ -108,9 +112,10 @@ Person clone_person(Person *person) {
 void test_deep_clone(void) {
   People people;
   CU_ASSERT_EQUAL_FATAL(People_init_with_capacity(&people, 4), 0);
+  people.print_item = (void (*)(void *))print_person;
 
   Person p1 = { strdup("Ben"),      10 },
-       p2 = { strdup("Fabricio"), 15 },
+       p2 = { strdup("Fabricio"), 16 },
        p3 = { strdup("amogus"),   -1 },
        p4 = { strdup("Bob"),      40 };
 
@@ -125,6 +130,8 @@ void test_deep_clone(void) {
   CU_ASSERT_EQUAL_FATAL(people_clone.cap, people.cap);
   CU_ASSERT_EQUAL_FATAL(people_clone.size, people.size);
   CU_ASSERT_PTR_NOT_EQUAL(people_clone.data, people.data);
+  People_print(&people);
+  People_print(&people_clone);
 
   for (int i = 0; i < people.len; i++) {
     Person *person = People_get(&people, i);
@@ -147,11 +154,11 @@ int main(int argc, char **argv) {
   int status = 0;
   CU_initialize_registry();
   CU_TestInfo IntVector_tests[] = {
-    { "push",   test_push   },
-    { "set_at", test_set_at },
-    { "pop",    test_pop    },
-    { "at",      test_at     },
-    { "clone",  test_clone  },
+    { "push",           test_push           },
+    { "set_at",         test_set_at         },
+    { "pop_shrink_get", test_pop_shrink_get },
+    { "at",             test_at             },
+    { "clone",          test_clone          },
     CU_TEST_INFO_NULL
   };
   CU_TestInfo People_tests[] = {

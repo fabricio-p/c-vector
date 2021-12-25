@@ -3,13 +3,12 @@ CFLAGS ?= -I ./ -std=c99 -DDEBUG -Wall -Wextra -Ofast -Wno-unused-function -Wno-
 tests: cvector_test cvector_pointermode_test
 
 cvector_test: test/cvector_test.c
-	$(CC) $(CFLAGS) -lcunit -o test/$@ $^
+	@mkdir -p bin
+	$(CC) $(CFLAGS) -lcunit -o bin/$@ $^
 
 cvector_pointermode_test: test/cvector_pointermode_test.c
-	$(CC) $(CFLAGS) -lcunit -o test/$@ $^
+	@mkdir -p bin
+	$(CC) $(CFLAGS) -lcunit -o bin/$@ $^
 
 clean:
-	@for f in $$(find test/ -name "*.o")\
-		$$(find test/ -type f -executable) ; \
-		do rm $$f ; \
-	done
+	@if [ -d bin ]; then rm -rf bin; fi

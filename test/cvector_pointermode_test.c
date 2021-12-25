@@ -57,11 +57,11 @@ void test_StringBuffer_push(void) {
   CU_ASSERT_FATAL(memcmp(str, "foo", 3) == 0);
   StringBuffer_cleanup(str);
 }
-void test_StringBuffer_pop(void) {
+void test_StringBuffer_pop_shrink_get(void) {
   StringBuffer str = StringBuffer_with_fill(2, 'y');
   CU_ASSERT_PTR_NOT_NULL_FATAL(str);
-  CU_ASSERT_EQUAL_FATAL(StringBuffer_pop(&str), 'y');
-  CU_ASSERT_EQUAL_FATAL(StringBuffer_pop(&str), 'y');
+  CU_ASSERT_EQUAL_FATAL(StringBuffer_pop_shrink_get(&str), 'y');
+  CU_ASSERT_EQUAL_FATAL(StringBuffer_pop_shrink_get(&str), 'y');
   StringBuffer_cleanup(str);
 }
 
@@ -128,13 +128,13 @@ int main(int argc, char **argv) {
   int status = 0;
   CU_initialize_registry();
   CU_TestInfo StringBuffer_tests[] = {
-    { "new",           test_StringBuffer_new           },
-    { "with_capacity", test_StringBuffer_with_capacity },
-    { "with_length",   test_StringBuffer_with_length   },
-    { "with_fill",     test_StringBuffer_with_fill     },
-    { "at",            test_StringBuffer_at            },
-    { "push",          test_StringBuffer_push          },
-    { "pop",           test_StringBuffer_pop           },
+    { "new",            test_StringBuffer_new            },
+    { "with_capacity",  test_StringBuffer_with_capacity  },
+    { "with_length",    test_StringBuffer_with_length    },
+    { "with_fill",      test_StringBuffer_with_fill      },
+    { "at",             test_StringBuffer_at             },
+    { "push",           test_StringBuffer_push           },
+    { "pop_shrink_get", test_StringBuffer_pop_shrink_get },
     CU_TEST_INFO_NULL
   };
   CU_TestInfo Rockets_tests[] = {

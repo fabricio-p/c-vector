@@ -1,5 +1,5 @@
-*.o
-/test/*_test
 .*.sw*
+/bin
+/build
 *~
 CUnitAutomated-Results.xml
