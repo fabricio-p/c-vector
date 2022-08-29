@@ -1,4 +1,12 @@
-CFLAGS ?= -I ./ -std=c99 -DDEBUG -Wall -Wextra -Ofast -Wno-unused-function -Wno-unused-variable
+CC ?= gcc
+CFLAGS += -std=c99 -I . -I cake_libs/                                \
+		  		-Wall -Wextra -Wformat=2 -Wshadow                          \
+          -Wwrite-strings -Wstrict-prototypes -Wold-style-definition \
+          -Wredundant-decls -Wnested-externs -Wmissing-include-dirs  \
+		  		-Wno-unused-parameter -Wno-unused-command-line-argument    \
+		  		-Wno-missing-braces -Wno-unused-function -O0 -ggdb -lcunit
+
+.PHONY: tests cvector_test cvector_pointermode_test clean
 
 tests: cvector_test cvector_pointermode_test
 

@@ -3,13 +3,9 @@
 Dynamic size arrays made easy in C.
 Who needs fancy generics like C++ for `std::vector` when you have the good old preprocessor macros.
 
-## But, why?
-Beginers usually prefer C++ over C because they see C++ easier and C++ has a lot of things built in. That is not true. Being fancier is not being easier. Things like classes, namespaces, inheritance, polymorphism, constructors, virtual, friend, public and private methods, `this`, `new`, `delete` and many others are just more things to remember that make the codebase complicated and messed up. Why do you think compiling C++ is slower?
-More experienced programmers who can see the truth, spend a long time implementing utilities that they need for their program.
-This library provides macros that generate type-specific vector implementations in the form of functions.
-
 ## Configure with `#define`
 This library relies heavily on macros to replicate what templates and generics in C++ do. Although you can modify the output of the macros using some other macros as configurations. Due to not being able to nest `#ifdef` inside `#define`, other macros will be defined according to the `#define`d configuration macros. Remember not to nest configurations, as the inner one will erase all the others. Everytime you change you configuration macros, make sure to re`#include <c-vector/lib.h>`. Also be sure to reconfigure and reinclude after using other libraries that use c-vector.
+
 ## Silent mode
 Activated if you `#define CVECTOR_SILENT`.
 Specific functions will by default return a status integer to indicate success of the function. `0` for ok and `1` if it didn't work. This is defined by the macros `CVECTOR_STATUS` and `CVECTOR_RETURN(expr)`, which by default will translate to `int` and `{ return expr; }`. This is called verbose mode. If `CVECTOR_SILENT` is defined, they will be translated to `void` and `{ expr; return; }`. This is called silent mode. It evaluates `expr` because sometimes it will return the status from another function call, which will also be silent, but the call needs to be done.
@@ -104,8 +100,20 @@ The alignment of the size that will be `malloc`'d. Defaults to `sizeof(size_t)`.
       Initialise vector with specified number of of items, all having the value you pass as the 3rd argument.
   - `CVECTOR_STATUS name##_push(name *vec, type val)`:
       Push item at the end of the vector. If in verbose mode and pushing the value fails, it will return 1, otherwise 0.
-  - `type name##_pop(name *vec)`:
-      Removes and return the last item of the vector. If the vector is empty, an empty value is returned.
+  - `CVECTOR_STATUS name##_pushp(name *vec, type *val_p)`:
+      Works like `name##_push` but you give a pointer to the value that is going to be pushed instead.
+  - `int name##_pop(name *vec)`:
+      Decrements the length and returns it if it is not 0, otherwise it returns -1.
+  - `type name##_pop_get(name *vec)`:
+      Removes and returns the last item of the vector. If the vector is empty, an 0-ed value is returned.
+  - `int name##_pop_get_into(name *vec, type *val_p)`:
+      Copies the last item to the address that the second arguments points to and ecrements the length and returns it if it is not 0, otherwise it returns -1.
+  - `type name##_pop_shrink_get(name *vec)`:
+      Works like `name##_pop_get` but shrinks the vector when the length gets smaller than half of the capacity.
+  - `int name##_pop_shrink_get_into(name *vec, type *val_p)`:
+      Works like `name##_pop_get_into` but shrinks the vector when the length gets smaller than half of the capacity.
+  - `void name##_clear(vec *name)`:
+      Sets the length to 0 and 0-s the previously occupied by items space.
   - `type *name##_at(name *vec, int idx)`:
       Works like [cvector\_at](#cvector_at).
   - `type *name##_get(name *vec, int idx)`:
@@ -175,10 +183,10 @@ int main(void) {
    * }
    */
 
-   // You can clone the vector. They will have the same data, but modifying any of them won't affect the other, because they're separate. 
+   // You can clone the vector. They will have the same data, but modifying any of them won't affect the other, because they're separate.
    // You can create as much clones as your memory fits.
    IntVector vec_clone = InVector_clone(&vec);
-   // Be sure to clean up all the vectors after you finish working with them, or you'll have memory leaks.
+   // Be sure to clean up all the vectors after you finish working with them, otherwise you'll end up leaking memory.
    IntVector_cleanup(&vec);
    IntVector_cleanup(&vec_clone);
 
@@ -245,15 +253,27 @@ The struct that holds the metadata of the vector, embeded before the vector's da
   - `int name##_expand_if_needed(name *vec)`:
       Works like [cvector\_expand\_if\_needed from struct-mode](#cvector_expand_if_needed). It is a double pointer (remember,  `name = type *`, so `name * = type **`) because it points to the variable that holds the address of the vector's data because it might reallocate and if it doesn't modify the address variable, you would end up with an invalid pointer. You don't need to worry since you don't need or have to use it.
   - `int name##_shrink_if_needed(name *vec)`:
-      Works likr [cvector\_shrink\_if\_needed from struct-mode](#cvector_shrink_if_needed), but will shrink if if the length is less than 1/3 of the capacity.
+      Works like [cvector\_shrink\_if\_needed from struct-mode](#cvector_shrink_if_needed), but will shrink if if the length is less than 1/3 of the capacity.
   - `type *name##_at(name vec, int idx)`:
       Works like `name##_at` from struct-mode.
   - `CVECTOR_STATUS name##_set(name vec, int id, type val)`:
       Works like `name##_set_at` from struct-mode.
   - `CVECTOR_STATUS name##_push(name *vec, type val)`:
       Works like `name##_push` from struct-mode. It takes a double pointer(rember that `name = type *`, so `name * = type **`) because it might reallocate the vector. In that case it will set the variable to point to the new address.
-  - `type name##_pop(name *vec)`:
-      Works like `name##_pop` from struct-mode, but just like `name##_push`, it might reallocate(the vector can be shrinked) so it needs the pointer to the vector variable.
+  - `CVECTOR_STATUS name##_pushp(name *vec, type *val_p)`:
+      Works like `name##_push` but you give a pointer to the value that is going to be pushed instead.
+  - `int name##_pop(name vec)`:
+      Decrements the length and returns it if it is not 0, otherwise it returns -1.
+  - `type name##_pop_get(name vec)`:
+      Removes and returns the last item of the vector. If the vector is empty, an 0-ed value is returned.
+  - `int name##_pop_get_into(name vec, type *val_p)`:
+      Copies the last item to the address that the second arguments points to and ecrements the length and returns it if it is not 0, otherwise it returns -1.
+  - `type name##_pop_shrink_get(name *vec)`:
+      Works like `name##_pop_get` but shrinks the vector when the length gets smaller than half of the capacity.
+  - `int name##_pop_shrink_get_into(name *vec, type *val_p)`:
+      Works like `name##_pop_get_into` but shrinks the vector when the length gets smaller than half of the capacity.
+  - `void name##_clear(vec name)`:
+      Sets the length to 0 and 0-s the previously occupied by items space.
   - `name##_clone(name vec)`:
       Works like `name##_clone` from struct-mode.
   - `name##_deep_clone(name vec, type (*cloner)(type *))`:
@@ -295,7 +315,7 @@ Pushing:
 ```
 Popping:
 ```c
-  printf("%f\n", F64Vector_pop(&vec));
+  printf("%f\n", F64Vector_pop_get(&vec));
 ```
 Unchecked item access:
 ```c
@@ -313,6 +333,11 @@ Getting the length and the capacity:
 ```c
   printf("len: %d\n"
          "cap: %d\n", F64Vector_len(vec), F64Vector_cap(vec));
+```
+Clearing the vector's contents:
+```c
+F64Vector_clear(vec);
+assert(F64Vector_len(vec) == 0);
 ```
 And finally, freeing:
 ```c

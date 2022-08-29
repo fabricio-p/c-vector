@@ -32,7 +32,13 @@
 #ifdef CVECTOR_POINTERMODE_COMPAT_GEN
 #undef CVECTOR_POINTERMODE_COMPAT_GEN
 #endif
-
+#ifndef VOIDP
+#ifdef __cplusplus
+#define VOIDP char *
+#else
+#define VOIDP void *
+#endif /* __cplusplus */
+#endif /* VOIDP */
 
 #define __cvector_inline__ static inline __attribute__((always_inline)) \
                            __attribute__((unused))
@@ -85,7 +91,7 @@
 
 #ifdef CVECTOR_POINTERMODE_COMPAT
 #undef CVECTOR_POINTERMODE_COMPAT
-#define CVECTOR_POINTERMODE_COMPAT_GEN(type, name)                       \
+#define CVECTOR_POINTERMODE_COMPAT_GEN(type, name)                      \
   __cvector_inline__                                                    \
   CVECTOR_STATUS name##_init(name *vec) {                               \
     CVECTOR_RETURN((*name = name##_new()) ? 0 : 1);                     \
@@ -114,7 +120,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 typedef struct {
   int cap;
@@ -122,24 +128,24 @@ typedef struct {
 } cvector_header;
 
 __cvector_inline__
-cvector_header *cvector_get_header(void *vec) {
+cvector_header *cvector_get_header(VOIDP vec) {
   return (cvector_header *)(vec - sizeof(cvector_header));
 }
 __cvector_inline__
-int cvectorp_len(void *vec) {
+int cvectorp_len(VOIDP vec) {
   return cvector_get_header(vec)->len;
 }
 __cvector_inline__
-int cvectorp_cap(void *vec) {
+int cvectorp_cap(VOIDP vec) {
   return cvector_get_header(vec)->cap;
 }
 __cvector_inline__
-int cvectorp_expand(void **vec, int item_size) {
+int cvectorp_expand(VOIDP *vec, int item_size) {
   int cap = cvector_get_header(*vec)->cap;
   cap = cap ? cap << 1 : 4;
   if (cap < cvectorp_cap(*vec)) return 2;
   int size = sizeof(cvector_header) + cap * item_size;
-  void *data = realloc(*vec - sizeof(cvector_header), size);
+  VOIDP data = realloc(*vec - sizeof(cvector_header), size);
   if (data == NULL)
     return 1;
   *vec = data + sizeof(cvector_header);
@@ -148,10 +154,10 @@ int cvectorp_expand(void **vec, int item_size) {
   return 0;
 }
 __cvector_inline__
-int cvectorp_shrink(void **vec, int item_size) {
+int cvectorp_shrink(VOIDP *vec, int item_size) {
   int cap = cvector_get_header(*vec)->cap / 2;
   int size = sizeof(cvector_header) + cap * item_size;
-  void *data = realloc(*vec - sizeof(cvector_header), size);
+  VOIDP data = realloc(*vec - sizeof(cvector_header), size);
   if (data == NULL)
     return 1;
   *vec = data + sizeof(cvector_header);
@@ -214,12 +220,12 @@ int cvectorp_shrink(void **vec, int item_size) {
   __cvector_inline__                                              \
   int name##_expand_if_needed(name *vec) {                        \
     return name##_len(*vec) >= name##_cap(*vec) ?                 \
-        cvectorp_expand((void **)vec, sizeof(type)) : 0;          \
+        cvectorp_expand((VOIDP *)vec, sizeof(type)) : 0;          \
   }                                                               \
   __cvector_inline__                                              \
   int name##_shrink_if_needed(name *vec) {                        \
     return name##_len(*vec) * 3 <= name##_cap(*vec) ?             \
-        cvectorp_shrink((void **)vec, sizeof(type)) : 0;          \
+        cvectorp_shrink((VOIDP *)vec, sizeof(type)) : 0;          \
   }                                                               \
   __cvector_inline__                                              \
   type *name##_at(name vec, int idx) {                            \
@@ -255,23 +261,50 @@ int cvectorp_shrink(void **vec, int item_size) {
     CVECTOR_RETURN(0);                                            \
   }                                                               \
   __cvector_inline__                                              \
-  void name##_pop(name *vec) {                                    \
-    if (cvector_get_header(*vec)->len > 0)                        \
-      --(cvector_get_header(*vec)->len);                          \
+  int name##_pop(name vec) {                                      \
+    if (cvector_get_header(vec)->len > 0) {                       \
+      int *len_p = &(cvector_get_header(vec)->len);               \
+      memset(&(vec[*len_p]), 0, sizeof(type));                    \
+      return --(*len_p);                                          \
+    }                                                             \
+    return -1;                                                    \
+  }                                                               \
+  __cvector_inline__                                              \
+  int name##_pop_get_into(name vec, type *val_p) {                \
+    if (name##_len(vec) != 0) {                                   \
+      type *p = &(vec[--(cvector_get_header(vec)->len)]);         \
+      if (sizeof(type) > 256) {                                   \
+        memcpy(val_p, p, sizeof(type));                           \
+      } else {                                                    \
+        *val_p = *p;                                              \
+      }                                                           \
+      return name##_len(vec);                                     \
+    } else {                                                      \
+      memset(val_p, '\0', sizeof(type));                          \
+      return -1;                                                  \
+    }                                                             \
+  }                                                               \
+  __cvector_inline__                                              \
+  type name##_pop_get(name vec) {                                 \
+    type val;                                                     \
+    name##_pop_get_into(vec, &val);                               \
+    return val;                                                   \
+  }                                                               \
+  __cvector_inline__                                              \
+  int name##_pop_shrink_get_into(name *vec, type *val_p) {        \
+    int len = name##_pop_get_into(*vec, val_p);                   \
+    name##_shrink_if_needed(vec);                                 \
+    return len;                                                   \
   }                                                               \
   __cvector_inline__                                              \
   type name##_pop_shrink_get(name *vec) {                         \
     type val;                                                     \
-    if (name##_len(*vec) != 0) {                                  \
-      val = (*vec)[--(cvector_get_header(*vec)->len)];            \
-      name##_shrink_if_needed(vec);                               \
-    } else {                                                      \
-      val = (type) {0};                                           \
-    }                                                             \
+    name##_pop_shrink_get_into(vec, &val);                        \
     return val;                                                   \
   }                                                               \
   __cvector_inline__                                              \
   void name##_clear(name vec) {                                   \
+    memset(vec, '\0', sizeof(type) *name##_len(vec));             \
     cvector_get_header(vec)->len = 0;                             \
   }                                                               \
   __cvector_inline__                                              \
@@ -294,7 +327,7 @@ int cvectorp_shrink(void **vec, int item_size) {
   }                                                               \
   __cvector_inline__                                              \
   void name##_cleanup(name vec) {                                 \
-    free((void *)vec - sizeof(cvector_header));                   \
+    free((VOIDP)vec - sizeof(cvector_header));                    \
   }
 
 
@@ -307,20 +340,20 @@ int cvectorp_shrink(void **vec, int item_size) {
 #ifndef CVECTOR_ALIGNMENT
 #define CVECTOR_ALIGNMENT ((int)sizeof(size_t))
 #endif
-#define CVECTOR_ALIGN(s) (((s) + (CVECTOR_ALIGNMENT) - 1) & \
-              ~((CVECTOR_ALIGNMENT) - 1))
+#define CVECTOR_ALIGN(s)                                          \
+  (((s) + (CVECTOR_ALIGNMENT) - 1) & ~((CVECTOR_ALIGNMENT) - 1))
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct {
-  int  item_size;
-  int  cap;
-  int  len;
-  int  size;
-  void *data;
-  void (* print_item)(void *);
+  int   item_size;
+  int   cap;
+  int   len;
+  int   size;
+  VOIDP data;
+  void (* print_item)(VOIDP);
 } cvector_t;
 
 __cvector_inline__
@@ -342,7 +375,7 @@ __cvector_inline__
 int cvector_expand(cvector_t *vec) {
   int cap = vec->cap ? vec->cap << 1 : CVECTOR_ALIGNMENT;
   int size = CVECTOR_ALIGN(cap * vec->item_size);
-  void *data = realloc(vec->data, size);
+  VOIDP data = realloc(vec->data, size);
   if (data == NULL)
     return 1;
   vec->cap = cap;
@@ -354,7 +387,7 @@ __cvector_inline__
 int cvector_shrink(cvector_t *vec) {
   int cap = vec->cap >> 1;
   int size = CVECTOR_ALIGN(cap * vec->item_size);
-  void *data = realloc(vec->data, size);
+  VOIDP data = realloc(vec->data, size);
   if (data == NULL)
     return 1;
   vec->cap = cap;
@@ -396,11 +429,11 @@ int cvector_shrink_if_needed(cvector_t *vec) {
   return 0;
 }
 __cvector_inline__
-void *cvector_get(cvector_t *vec, int idx) {
+VOIDP cvector_get(cvector_t *vec, int idx) {
   return vec->data + idx * vec->item_size;
 }
 __cvector_inline__
-void *cvector_at(cvector_t *vec, int idx) {
+VOIDP cvector_at(cvector_t *vec, int idx) {
   if (idx < 0)
     idx = vec->len - ~idx - 1;
   return idx < 0 || idx >= vec->len ? NULL : cvector_get(vec, idx);
@@ -488,8 +521,15 @@ void *cvector_at(cvector_t *vec, int idx) {
     CVECTOR_RETURN(0);                                            \
   }                                                               \
   __cvector_inline__                                              \
-  void name##_pop(name *vec) {                                    \
-    if (vec->len > 0) --(vec->len);                               \
+  int name##_pop(name *vec) {                                     \
+    if (vec->len != 0) {                                          \
+      --(vec->len);                                               \
+      memset(                                                     \
+          vec->data + vec->len * sizeof(type), '\0', sizeof(type) \
+      );                                                          \
+      return vec->len;                                            \
+    }                                                             \
+    return -1;                                                    \
   }                                                               \
   __cvector_inline__                                              \
   type name##_pop_shrink_get(name *vec) {                         \
