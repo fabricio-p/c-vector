@@ -65,6 +65,8 @@ void test_StringBuffer_pop_shrink_get(void) {
   StringBuffer_cleanup(str);
 }
 
+#if 0
+
 #define CVECTOR_POINTERMODE
 #define CVECTOR_NO_TYPEDEF
 #include "lib.h"
@@ -122,6 +124,7 @@ void test_Rockets_with_fill(void) {
   };
   Rockets rockets = Rockets_with_fill(1, base_rocket);
 }
+#endif /* 0 */
 
 
 int main(int argc, char **argv) {
@@ -137,17 +140,17 @@ int main(int argc, char **argv) {
     { "pop_shrink_get", test_StringBuffer_pop_shrink_get },
     CU_TEST_INFO_NULL
   };
-  CU_TestInfo Rockets_tests[] = {
+  /* CU_TestInfo Rockets_tests[] = {
     { "new",           test_Rockets_new           },
     { "with_capacity", test_Rockets_with_capacity },
     { "with_length",   test_Rockets_with_length   },
     CU_TEST_INFO_NULL
-  };
+  }; */
   CU_SuiteInfo suites[] = {
     { "cvector<pointermode>/StringBuffer",
       NULL, NULL, NULL, NULL, StringBuffer_tests },
-    { "cvector<pointermode>/Rockets",
-      NULL, NULL, NULL, NULL, Rockets_tests },
+    // { "cvector<pointermode>/Rockets",
+    //   NULL, NULL, NULL, NULL, Rockets_tests },
     CU_SUITE_INFO_NULL
   };
   if ((status = CU_register_suites(suites)) != CUE_SUCCESS)

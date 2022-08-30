@@ -429,9 +429,9 @@ VOIDP cvector_get(cvector_t *vec, int idx, int item_size) {
 __cvector_inline__
 VOIDP cvector_at(cvector_t *vec, int idx, int item_size) {
   if (idx < 0)
-    idx = vec->l - ~idx - 1;
-  return idx < 0 || idx >= vec->l ?
-          NULL : cvector_get(vec, idx, item_size);
+    idx = vec->l + idx;
+  return idx >= 0 && idx < vec->l ?
+          cvector_get(vec, idx, item_size) : NULL;
 }
 
 #ifdef __cplusplus
@@ -456,7 +456,8 @@ VOIDP cvector_at(cvector_t *vec, int idx, int item_size) {
   }                                                               \
   __cvector_inline__                                              \
   void name##_set(name *vec, int idx, type val) {                 \
-    memcpy(vec->d + idx * sizeof(type), &val, sizeof(type));      \
+    /* TODO: DEREF */                                             \
+    memcpy(&(vec->d[idx]), &val, sizeof(type));                   \
   }                                                               \
   __cvector_inline__                                              \
   CVECTOR_STATUS name##_init_with_length(name *vec, int len) {    \
@@ -539,15 +540,36 @@ VOIDP cvector_at(cvector_t *vec, int idx, int item_size) {
     return -1;                                                    \
   }                                                               \
   __cvector_inline__                                              \
+  int name##_pop_get_into(name *vec, type *val_p) {               \
+    if (vec->l != 0) {                                            \
+      type *p = &(vec->d[--(vec->l)]);                            \
+      if (sizeof(type) > 256) {                                   \
+        memcpy(val_p, p, sizeof(type));                           \
+      } else {                                                    \
+        *val_p = *p;                                              \
+      }                                                           \
+      return vec->l;                                              \
+    } else {                                                      \
+      memset(val_p, '\0', sizeof(type));                          \
+      return -1;                                                  \
+    }                                                             \
+  }                                                               \
+  __cvector_inline__                                              \
+  type name##_pop_get(name *vec) {                                \
+    type val;                                                     \
+    name##_pop_get_into(vec, &val);                               \
+    return val;                                                   \
+  }                                                               \
+  __cvector_inline__                                              \
+  int name##_pop_shrink_get_into(name *vec, type *val_p) {        \
+    int len = name##_pop_get_into(vec, val_p);                    \
+    cvector_shrink_if_needed((cvector_t *)vec, sizeof(type));     \
+    return len;                                                   \
+  }                                                               \
+  __cvector_inline__                                              \
   type name##_pop_shrink_get(name *vec) {                         \
     type val;                                                     \
-    memset(&val, 0, sizeof(type));                                \
-    if (vec->l <= 0) {                                            \
-      return val;                                                 \
-    }                                                             \
-    type *ptr = (type *)(vec->d + (--(vec->l)) * sizeof(type));   \
-    memcpy(&val, ptr, sizeof(type));                              \
-    cvector_shrink_if_needed((cvector_t *)vec, sizeof(type));     \
+    name##_pop_shrink_get_into(vec, &val);                        \
     return val;                                                   \
   }                                                               \
   __cvector_inline__                                              \
