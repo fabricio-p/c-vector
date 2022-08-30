@@ -40,8 +40,8 @@
 #endif /* __cplusplus */
 #endif /* VOIDP */
 
-#define __cvector_inline__ static inline __attribute__((always_inline)) \
-                           __attribute__((unused))
+#define __cvector_inline__                                              \
+  static inline __attribute__((always_inline)) __attribute__((unused))
 
 #ifndef CVECTOR_SILENT
 #define CVECTOR_RETURN(expr) { return expr; }
@@ -347,96 +347,91 @@ int cvectorp_shrink(VOIDP *vec, int item_size) {
 extern "C" {
 #endif
 
-typedef struct {
-  int   item_size;
-  int   cap;
-  int   len;
-  int   size;
-  VOIDP data;
-  void (* print_item)(VOIDP);
-} cvector_t;
+#define CVECTOR_STRUCT(type)  \
+  struct {                    \
+    int   c;                  \
+    int   l;                  \
+    type *d;                  \
+  }
+
+typedef CVECTOR_STRUCT(void) cvector_t;
 
 __cvector_inline__
 int cvector_init(cvector_t *vec, int item_size, int cap) {
-  vec->len = 0;
-  vec->cap = cap;
-  vec->item_size = item_size;
-  vec->size = CVECTOR_ALIGN(item_size * cap);
+  vec->l = 0;
+  vec->c = cap;
+  int size = CVECTOR_ALIGN(item_size * cap);
   if (cap != 0) {
-    if ((vec->data = malloc(vec->size)) == NULL)
+    if ((vec->d = malloc(size)) == NULL)
       return 1;
-    memset(vec->data, 0, vec->size);
+    memset(vec->d, 0, size);
   } else {
-    vec->data = NULL;
+    vec->d = NULL;
   }
   return 0;
 }
 __cvector_inline__
-int cvector_expand(cvector_t *vec) {
-  int cap = vec->cap ? vec->cap << 1 : CVECTOR_ALIGNMENT;
-  int size = CVECTOR_ALIGN(cap * vec->item_size);
-  VOIDP data = realloc(vec->data, size);
+int cvector_expand(cvector_t *vec, int item_size) {
+  int cap = vec->c ? vec->c << 1 : CVECTOR_ALIGNMENT;
+  int size = CVECTOR_ALIGN(cap * item_size);
+  VOIDP data = realloc(vec->d, size);
   if (data == NULL)
     return 1;
-  vec->cap = cap;
-  vec->size = size;
-  vec->data = data;
+  vec->c = cap;
+  vec->d = data;
   return 0;
 }
 __cvector_inline__
-int cvector_shrink(cvector_t *vec) {
-  int cap = vec->cap >> 1;
-  int size = CVECTOR_ALIGN(cap * vec->item_size);
-  VOIDP data = realloc(vec->data, size);
+int cvector_shrink(cvector_t *vec, int item_size) {
+  int cap = vec->c >> 1;
+  int size = CVECTOR_ALIGN(cap * item_size);
+  VOIDP data = realloc(vec->d, size);
   if (data == NULL)
     return 1;
-  vec->cap = cap;
-  vec->size = size;
-  vec->data = data;
+  vec->c = cap;
+  vec->d = data;
   return 0;
 }
 __cvector_inline__
-cvector_t cvector_clone(cvector_t *vec) {
+cvector_t cvector_clone(cvector_t *vec, int item_size) {
   cvector_t new_vec;
-  cvector_init(&new_vec, vec->item_size, vec->cap);
-  new_vec.print_item = vec->print_item;
-  new_vec.len = vec->len;
-  new_vec.print_item = vec->print_item;
-  memcpy(new_vec.data, vec->data, new_vec.size);
+  cvector_init(&new_vec, item_size, vec->c);
+  new_vec.l = vec->l;
+  memcpy(new_vec.d, vec->d, new_vec.l * item_size);
   return new_vec;
 }
 __cvector_inline__
 void cvector_cleanup(cvector_t *vec) {
   if (vec != NULL) {
-    if (vec->data != NULL)
-      free(vec->data);
-    vec->len = vec->cap = vec->item_size = 0;
-    vec->data = NULL;
-    vec->print_item = NULL;
+    if (vec->d != NULL)
+      free(vec->d);
+    vec->l = vec->c = 0;
+    vec->d = NULL;
   }
 }
 
 __cvector_inline__
-int cvector_expand_if_needed(cvector_t *vec) {
-  if (vec->len >= vec->cap)
-    return cvector_expand(vec);
+int cvector_expand_if_needed(cvector_t *vec, int item_size) {
+  if (vec->l >= vec->c)
+    return cvector_expand(vec, item_size);
   return 0;
 }
 __cvector_inline__
-int cvector_shrink_if_needed(cvector_t *vec) {
-  if (vec->len * 3 <= vec->cap && vec->cap > CVECTOR_ALIGNMENT)
-    return cvector_shrink(vec);
+int cvector_shrink_if_needed(cvector_t *vec, int item_size) {
+  if (vec->l * 3 <= vec->c && vec->c > CVECTOR_ALIGNMENT)
+    return cvector_shrink(vec, item_size);
   return 0;
 }
 __cvector_inline__
-VOIDP cvector_get(cvector_t *vec, int idx) {
-  return vec->data + idx * vec->item_size;
+VOIDP cvector_get(cvector_t *vec, int idx, int item_size) {
+  return vec->d + idx * item_size;
 }
 __cvector_inline__
-VOIDP cvector_at(cvector_t *vec, int idx) {
+VOIDP cvector_at(cvector_t *vec, int idx, int item_size) {
   if (idx < 0)
-    idx = vec->len - ~idx - 1;
-  return idx < 0 || idx >= vec->len ? NULL : cvector_get(vec, idx);
+    idx = vec->l - ~idx - 1;
+  return idx < 0 || idx >= vec->l ?
+          NULL : cvector_get(vec, idx, item_size);
 }
 
 #ifdef __cplusplus
@@ -446,24 +441,28 @@ VOIDP cvector_at(cvector_t *vec, int idx) {
 #endif /* _CVECTOR_H_ */
 
 #define CVECTOR_WITH_NAME(type, name)                             \
-  typedef cvector_t name;                                         \
+  typedef CVECTOR_STRUCT(type) name;                              \
   __cvector_inline__                                              \
   CVECTOR_STATUS name##_init(name *vec) {                         \
-    CVECTOR_RETURN(cvector_init(vec, sizeof(type), 0));           \
+    CVECTOR_RETURN(                                               \
+        cvector_init((cvector_t *)vec, sizeof(type), 0)           \
+    );                                                            \
   }                                                               \
   __cvector_inline__                                              \
   CVECTOR_STATUS name##_init_with_capacity(name *vec, int cap) {  \
-    CVECTOR_RETURN(cvector_init(vec, sizeof(type), cap));         \
+    CVECTOR_RETURN(                                               \
+        cvector_init((cvector_t *)vec, sizeof(type), cap)         \
+    );                                                            \
   }                                                               \
   __cvector_inline__                                              \
   void name##_set(name *vec, int idx, type val) {                 \
-    memcpy(vec->data + idx * sizeof(type), &val, sizeof(type));   \
+    memcpy(vec->d + idx * sizeof(type), &val, sizeof(type));      \
   }                                                               \
   __cvector_inline__                                              \
   CVECTOR_STATUS name##_init_with_length(name *vec, int len) {    \
     if (name##_init_with_capacity(vec, len))                      \
       CVECTOR_RETURN(1);                                          \
-    vec->len = len;                                               \
+    vec->l = len;                                                 \
     CVECTOR_RETURN(0);                                            \
   }                                                               \
   __cvector_inline__                                              \
@@ -479,27 +478,35 @@ VOIDP cvector_at(cvector_t *vec, int idx) {
   CVECTOR_HEAP_STRUCT_GEN(type, name)                             \
   __cvector_inline__                                              \
   type *name##_at(name *vec, int idx) {                           \
-    return (type *)cvector_at(vec, idx);                          \
+    return (type *)cvector_at(                                    \
+        (cvector_t *)vec, idx, sizeof(type)                       \
+    );                                                            \
   }                                                               \
   __cvector_inline__                                              \
   type *name##_get(name *vec, int idx) {                          \
-    return (type *)cvector_get(vec, idx);                         \
+    return (type *)cvector_get(                                   \
+        (cvector_t *)vec, idx, sizeof(type)                       \
+    );                                                            \
   }                                                               \
   __cvector_inline__                                              \
   name name##_clone(name *vec) {                                  \
-    return cvector_clone(vec);                                    \
+    union { cvector_t cv; name v; } u;                            \
+    u.cv = cvector_clone((cvector_t *)vec, sizeof(type));         \
+    return u.v;                                                   \
   }                                                               \
   __cvector_inline__                                              \
   CVECTOR_STATUS name##_set_at(name *vec, int idx, type val) {    \
-    if (idx < 0 || idx >= vec->len)                               \
+    if (idx < 0 || idx >= vec->l)                                 \
       CVECTOR_RETURN(1);                                          \
     name##_set(vec, idx, val);                                    \
     CVECTOR_RETURN(0);                                            \
   }                                                               \
   __cvector_inline__                                              \
   type *name##_push_empty(name *vec) {                            \
-    return cvector_expand_if_needed(vec) ?                        \
-           NULL : cvector_get(vec, (vec->len)++);                 \
+    return cvector_expand_if_needed(                              \
+        (cvector_t *)vec, sizeof(type)                            \
+    ) ? NULL :                                                    \
+        cvector_get((cvector_t *)vec, (vec->l)++, sizeof(type));  \
   }                                                               \
   __cvector_inline__                                              \
   CVECTOR_STATUS name##_push(name *vec, type item) {              \
@@ -522,12 +529,12 @@ VOIDP cvector_at(cvector_t *vec, int idx) {
   }                                                               \
   __cvector_inline__                                              \
   int name##_pop(name *vec) {                                     \
-    if (vec->len != 0) {                                          \
-      --(vec->len);                                               \
+    if (vec->l != 0) {                                            \
+      --(vec->l);                                                 \
       memset(                                                     \
-          vec->data + vec->len * sizeof(type), '\0', sizeof(type) \
+          vec->d + vec->l * sizeof(type), '\0', sizeof(type)      \
       );                                                          \
-      return vec->len;                                            \
+      return vec->l;                                              \
     }                                                             \
     return -1;                                                    \
   }                                                               \
@@ -535,55 +542,58 @@ VOIDP cvector_at(cvector_t *vec, int idx) {
   type name##_pop_shrink_get(name *vec) {                         \
     type val;                                                     \
     memset(&val, 0, sizeof(type));                                \
-    if (vec->len <= 0)                                            \
-    return val;                                                   \
-    type *ptr = (type *)(vec->data +                              \
-                         (--(vec->len)) * sizeof(type));          \
+    if (vec->l <= 0) {                                            \
+      return val;                                                 \
+    }                                                             \
+    type *ptr = (type *)(vec->d + (--(vec->l)) * sizeof(type));   \
     memcpy(&val, ptr, sizeof(type));                              \
-    cvector_shrink_if_needed(vec);                                \
+    cvector_shrink_if_needed((cvector_t *)vec, sizeof(type));     \
     return val;                                                   \
   }                                                               \
   __cvector_inline__                                              \
   void name##_clear(name *vec) {                                  \
-    vec->len = 0;                                                 \
+    vec->l = 0;                                                   \
+    memset(vec->d, '\0', vec->l * sizeof(type));                  \
   }                                                               \
   __cvector_inline__                                              \
   name name##_deep_clone(name *vec, type (*cloner)(type *)) {     \
     name new_vec;                                                 \
-    name##_init_with_capacity(&new_vec, vec->cap);                \
-    for (int i = 0; i < vec->len; i++) {                          \
-      name##_push(&new_vec, cloner(name##_get(vec, i)));          \
+    name##_init_with_capacity(&new_vec, vec->c);                  \
+    for (int i = 0; i < vec->l; i++) {                            \
+      name##_push(                                                \
+          &new_vec, cloner(name##_get(vec, i))                    \
+      );                                                          \
     }                                                             \
-    new_vec.print_item = vec->print_item;                         \
     return new_vec;                                               \
   }                                                               \
   __cvector_inline__                                              \
-  void name##_print(name *vec) {                                  \
-    printf("[" #name "][cvector_t(" #type ")] {  \n"              \
-         "  .len: %d  \n"                                         \
-         "  .cap: %d  \n"                                         \
-         "  .data: %p  \n"                                        \
+  void name##_print(name *vec, void (*print_item)(type *)) {      \
+    printf("[" #name "][cvector_t(" #type ")] {\n"                \
+         "  .len: %d\n"                                           \
+         "  .cap: %d\n"                                           \
+         "  .data: %p\n"                                          \
          "  .items: [",                                           \
-         vec->len, vec->cap, vec->data);                          \
-    if (vec->print_item == NULL) {                                \
+         vec->l, vec->c, vec->d);                                 \
+    if (print_item == NULL) {                                     \
       printf(" -- No item print function "                        \
-          "available --");                                        \
+             "available --");                                     \
     } else {                                                      \
-      for (int i = 0; i < vec->len; i++) {                        \
+      for (int i = 0; i < vec->l; i++) {                          \
         type *item = name##_get(vec, i);                          \
         if (i == 0) {                                             \
-          vec->print_item(item);                                  \
+          print_item(item);                                       \
         } else {                                                  \
           printf(", ");                                           \
-          vec->print_item(item);                                  \
+          print_item(item);                                       \
         }                                                         \
       }                                                           \
       printf("]  \n}\n");                                         \
     }                                                             \
   }                                                               \
   __cvector_inline__                                              \
-  void name##_cleanup(name *vec) { cvector_cleanup(vec); }
+  void name##_cleanup(name *vec) {                                \
+    cvector_cleanup((cvector_t *)vec);                            \
+  }
 
 #endif /* CVECTOR_POINTERMODE */
-#define CVECTOR(type)                     \
-  CVECTOR_WITH_NAME(type, Vector_##type);
+#define CVECTOR(type) CVECTOR_WITH_NAME(type, Vector_##type)

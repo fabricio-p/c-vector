@@ -17,19 +17,16 @@ All the functions take the pointer of the `cvector_t` struct. It's a pointer to 
 ### Functions and structs
 
 #### cvector\_t: struct
-A struct representing the vector and holding it's metadata.
- - `int item_size`: The size of the array's item. Used for indexing. **DO NOT** modify.
- - `int cap`: The capacity of the array. **DO NOT** modify.
- - `int len`: The number of items the array has. **DO NOT** modify.
- - `int size`: The allocated size. **DO NOT** modify. Aligment defined by the [ALIGNMENT](#ALIGNMENT) macro.
- - `void *data`: The pointer to the allocated memory. **DO NOT** modify.
- - `void (print_item *)(void *)`: The function that prints the item. Receives the pointer of the item. **DO NOT** print a newline at the end.
+A generic struct representing the vector data structure.
+ - `int c`: The capacity of the vector.
+ - `int l`: The number of items the vector has.
+ - `void *d`: The pointer to the allocated memory.
 
 #### cvector\_init
 Initializes the vector.
   - Arguments:
     - `cvector_t *vec`: -
-    - `int item_size`: The size of each item.
+    - `int item_size`: The size of the item's type.
     - `int cap`: If you know how big the array might get, to prevent continous reallocations. If `0`, no memory is allocated.
   - Return
     - Verbose mode(`int`): `0` if allocation succeded, otherwise `1`.
@@ -40,6 +37,7 @@ Gets the item at the specified index with bounds check.
   - Arguments:
     - `cvector_t *vec`: -
     - `int idx`: The index of the item.
+    - `int item_size`: The size of the item's type.
   - Return(`void *`): The pointer to the item, `NULL` if the index is out of bounds.
 
 #### cvector\_get
@@ -48,30 +46,35 @@ Gets the item at the specified index without bounds check.
   - Arguments:
     - `cvector_t *vec`: -
     - `int idx`: The index of the item.
+    - `int item_size`: The size of the item's type.
   - Returns(`void *`): The calculated pointer to the item.
 
 #### cvector\_expand
 `realloc`ates more memory for more items.
   - Arguments:
     - `cvector_t *vec`: -
+    - `int item_size`: The size of the item's type.
   - Return(`int`): `0` if the reallocation succeded, othewise `1`.
 
 #### cvector\_shrink
 Shrinks the allocated memory by half.
   - Arguments:
     - `cvector_t *vec`: -
+    - `int item_size`: The size of the item's type.
   - Return(`int`): `0` if the reallocation succeded, othewise `1`.
 
 #### cvector\_expand\_if\_needed
 Expands the vector if `len >= cap`.
   - Arguments:
     - `cvector_t *vec`: -
+    - `int item_size`: The size of the item's type.
   - Return: The same as [cvector\_expand](#cvector_expand)
 
 #### cvector\_shrink\_if\_needed
 Calls [cvector\_shrink](#cvector_shrink) if `len < cap / 2`
   - Arguments:
     - `cvector_t *vec`: -
+    - `int item_size`: The size of the item's type.
   - Return: The same as [cvector\_shrink](#cvector_shrink)
 
 #### cvector\_cleanup
@@ -89,7 +92,7 @@ The alignment of the size that will be `malloc`'d. Defaults to `sizeof(size_t)`.
   - `name`: An identifier that will be used in the start of the emited functions' names.
 
 ##### Output
-  - `typedef cvector_t` the identifier you provide as argument `name`.
+  - A struct similiar to `cvector_t` but the `d` field has type `type *`.
   - `CVECTOR_STATUS name##_init(name *vec)`:
       Initialise empty vector.
   - `CVECTOR_STATUS name##_init_with_capacity(name *vec, int cap)`:
@@ -126,8 +129,8 @@ The alignment of the size that will be `malloc`'d. Defaults to `sizeof(size_t)`.
       Creates and returns a new identical vector, but with the items copied on another place.
   - `name name##_deep_clone(name *vec, type (*cloner)(type *))`:
       This is more like a map function. It creates a new vector, and uses the function to clone each of the items, which are pushed to the new vector.
-  - `void name##_print(name *vec)`:
-      Nicely prints the vector data and it's values. The `print_item` field of the [cvector\_t](#cvector_t) struct needs to be set so it can print the items.
+  - `void name##_print(name *vec, void (*print_item)(type *))`:
+      Nicely prints the vector data and it's values.
   - `void name##_cleanup`:
       Calls [cvector\_cleanup](#cvector_cleanup).
 

@@ -20,10 +20,9 @@ void test_push(void) {
   CU_ASSERT_EQUAL_FATAL(IntVector_push(&int_vec, 1312312), 0);
   CU_ASSERT_EQUAL_FATAL(IntVector_push(&int_vec, 13224443), 0);
   
-  CU_ASSERT_EQUAL_FATAL(int_vec.item_size, sizeof(int));
-  CU_ASSERT_EQUAL_FATAL(int_vec.len, 8);
-  CU_ASSERT_EQUAL_FATAL(int_vec.cap, 8);
-  CU_ASSERT_PTR_NOT_NULL_FATAL(int_vec.data);
+  CU_ASSERT_EQUAL_FATAL(int_vec.l, 8);
+  CU_ASSERT_EQUAL_FATAL(int_vec.c, 8);
+  CU_ASSERT_PTR_NOT_NULL_FATAL(int_vec.d);
 }
 void test_set_at(void) {
   IntVector_cleanup(&int_vec);
@@ -35,7 +34,7 @@ void test_set_at(void) {
     CU_ASSERT_EQUAL_FATAL(IntVector_set_at(&int_vec, i, val), 0);
   }
   for (int i = 0; i < 4; ++i) {
-    int *ptr = (void *)int_vec.data + i * sizeof(int);
+    int *ptr = (void *)int_vec.d + i * sizeof(int);
     CU_ASSERT_EQUAL_FATAL(*ptr, ints[i]);
   }
 }
@@ -43,7 +42,7 @@ void test_pop_shrink_get(void) {
   IntVector_cleanup(&int_vec);
   CU_ASSERT_EQUAL_FATAL(IntVector_init_with_fill(&int_vec, 4, 132), 0);
 
-  while (int_vec.len) {
+  while (int_vec.l) {
     CU_ASSERT_EQUAL_FATAL(IntVector_pop_shrink_get(&int_vec), 132);
   }
 }
@@ -54,9 +53,9 @@ void test_at(void) {
   IntVector_set(&int_vec, 0, 7465);
   IntVector_set(&int_vec, 1, 13237);
 
-  CU_ASSERT_PTR_EQUAL_FATAL(IntVector_at(&int_vec, 0), int_vec.data);
+  CU_ASSERT_PTR_EQUAL_FATAL(IntVector_at(&int_vec, 0), int_vec.d);
   CU_ASSERT_PTR_EQUAL_FATAL(IntVector_at(&int_vec, 1),
-    int_vec.data + sizeof(int));
+    int_vec.d + sizeof(int));
 
   CU_ASSERT_EQUAL_FATAL(*IntVector_at(&int_vec, 0), 7465);
   CU_ASSERT_EQUAL_FATAL(*IntVector_at(&int_vec, 1), 13237);
@@ -75,11 +74,10 @@ void test_clone(void) {
 
   IntVector new_int_vec = IntVector_clone(&int_vec);
 
-  CU_ASSERT_EQUAL_FATAL(new_int_vec.len, int_vec.len);
-  CU_ASSERT_EQUAL_FATAL(new_int_vec.cap, int_vec.cap);
-  CU_ASSERT_EQUAL_FATAL(new_int_vec.size, int_vec.size);
+  CU_ASSERT_EQUAL_FATAL(new_int_vec.l, int_vec.l);
+  CU_ASSERT_EQUAL_FATAL(new_int_vec.c, int_vec.c);
 
-  for (int i = 0; i < new_int_vec.len; ++i) {
+  for (int i = 0; i < new_int_vec.l; ++i) {
     CU_ASSERT_EQUAL_FATAL(*IntVector_get(&new_int_vec, i),
                           *IntVector_get(&int_vec, i));
   }
@@ -115,12 +113,11 @@ void test_deep_clone(void) {
 
   People people_clone = People_deep_clone(&people, clone_person);
 
-  CU_ASSERT_EQUAL_FATAL(people_clone.len, people.len);
-  CU_ASSERT_EQUAL_FATAL(people_clone.cap, people.cap);
-  CU_ASSERT_EQUAL_FATAL(people_clone.size, people.size);
-  CU_ASSERT_PTR_NOT_EQUAL(people_clone.data, people.data);
+  CU_ASSERT_EQUAL_FATAL(people_clone.l, people.l);
+  CU_ASSERT_EQUAL_FATAL(people_clone.c, people.c);
+  CU_ASSERT_PTR_NOT_EQUAL(people_clone.d, people.d);
 
-  for (int i = 0; i < people.len; ++i) {
+  for (int i = 0; i < people.l; ++i) {
     Person *person = People_get(&people, i);
     Person *person_clone = People_get(&people_clone, i);
     CU_ASSERT_PTR_NOT_NULL_FATAL(person);
