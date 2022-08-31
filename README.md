@@ -127,7 +127,7 @@ The alignment of the size that will be `malloc`'d. Defaults to `sizeof(size_t)`.
       Works like `name##_set`, but in verbose mode, returns o1 if out of bounds and 0 if ok.
   - `name name##_clone(name *vec)`:
       Creates and returns a new identical vector, but with the items copied on another place.
-  - `name name##_deep_clone(name *vec, type (*cloner)(type *))`:
+  - `name name##_deep_clone(name *vec, type (*cloner)(type const *, type *))`:
       This is more like a map function. It creates a new vector, and uses the function to clone each of the items, which are pushed to the new vector.
   - `void name##_print(name *vec, void (*print_item)(type *))`:
       Nicely prints the vector data and it's values.
@@ -279,7 +279,7 @@ The struct that holds the metadata of the vector, embeded before the vector's da
       Sets the length to 0 and 0-s the previously occupied by items space.
   - `name##_clone(name vec)`:
       Works like `name##_clone` from struct-mode.
-  - `name##_deep_clone(name vec, type (*cloner)(type *))`:
+  - `name##_deep_clone(name vec, type (*cloner)(type const *, type *))`:
       Works like `name##_deep_clone` from struct-mode.
   - `void name##_cleanup(name vec)`:
       Will free the vector.

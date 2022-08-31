@@ -311,17 +311,21 @@ int cvectorp_shrink(VOIDP *vec, int item_size) {
   name name##_clone(name vec) {                                   \
     name clone = name##_with_capacity(name##_cap(vec));           \
     if (clone != NULL) {                                          \
-      cvector_get_header(vec)->len = name##_len(vec);             \
+      cvector_get_header(clone)->len = name##_len(vec);           \
       memcpy(clone, vec, name##_len(vec) * sizeof(type));         \
     }                                                             \
     return clone;                                                 \
   }                                                               \
   __cvector_inline__                                              \
-  name name##_deep_clone(name vec, type (*cloner)(type *)) {      \
+  name name##_deep_clone(                                         \
+      name vec, void (*cloner)(type const *, type *)              \
+  ) {                                                             \
     name clone = name##_with_capacity(name##_cap(vec));           \
-    if (clone == NULL) {                                          \
-      cvector_get_header(vec)->len = name##_len(vec);             \
-      FOREACH(type, item, vec, clone[i] = cloner(item));          \
+    if (clone != NULL) {                                          \
+      cvector_get_header(clone)->len = name##_len(vec);           \
+      for (int i = 0; i < name##_len(vec); ++i) {                 \
+        cloner(&(vec[i]), &(clone[i]));                           \
+      }                                                           \
     }                                                             \
     return clone;                                                 \
   }                                                               \
@@ -578,13 +582,15 @@ VOIDP cvector_at(cvector_t *vec, int idx, int item_size) {
     memset(vec->d, '\0', vec->l * sizeof(type));                  \
   }                                                               \
   __cvector_inline__                                              \
-  name name##_deep_clone(name *vec, type (*cloner)(type *)) {     \
+  name name##_deep_clone(                                         \
+      name *vec, void (*cloner)(type const *, type *)             \
+  ) {                                                             \
     name new_vec;                                                 \
-    name##_init_with_capacity(&new_vec, vec->c);                  \
-    for (int i = 0; i < vec->l; i++) {                            \
-      name##_push(                                                \
-          &new_vec, cloner(name##_get(vec, i))                    \
-      );                                                          \
+    if (name##_init_with_capacity(&new_vec, vec->c) == 0) {       \
+      new_vec.l = vec->l;                                         \
+      for (int i = 0; i < vec->l; ++i) {                          \
+        cloner(&(vec->d[i]), &(new_vec.d[i]));                    \
+      }                                                           \
     }                                                             \
     return new_vec;                                               \
   }                                                               \

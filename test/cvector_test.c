@@ -18,7 +18,7 @@ void test_push(void) {
   CU_ASSERT_EQUAL_FATAL(IntVector_push(&int_vec, 341123), 0);
   CU_ASSERT_EQUAL_FATAL(IntVector_push(&int_vec, 1312312), 0);
   CU_ASSERT_EQUAL_FATAL(IntVector_push(&int_vec, 13224443), 0);
-  
+
   CU_ASSERT_EQUAL_FATAL(int_vec.l, 8);
   CU_ASSERT_EQUAL_FATAL(int_vec.c, 8);
   CU_ASSERT_PTR_NOT_NULL_FATAL(int_vec.d);
@@ -96,21 +96,19 @@ typedef struct {
 
 CVECTOR_WITH_NAME(Person, People);
 
-Person clone_person(Person *person) {
-  Person new_person;
-  new_person.name = strdup(person->name);
-  new_person.age = person->age;
-  return new_person;
+void clone_person(Person const *person, Person *clone) {
+  clone->name = strdup(person->name);
+  clone->age = person->age;
 }
 
 void test_deep_clone(void) {
   People people;
   CU_ASSERT_EQUAL_FATAL(People_init_with_capacity(&people, 4), 0);
 
-  Person p1 = { strdup("Ben"),    10 },
-       p2 = { strdup("Fabricio"), 16 },
-       p3 = { strdup("amogus"),   -1 },
-       p4 = { strdup("Bob"),      40 };
+  Person p1 = { strdup("Ben"),      10 },
+         p2 = { strdup("Fabricio"), 16 },
+         p3 = { strdup("amogus"),   -1 },
+         p4 = { strdup("Bob"),      40 };
 
   CU_ASSERT_EQUAL_FATAL(People_push(&people, p1), 0);
   CU_ASSERT_EQUAL_FATAL(People_push(&people, p2), 0);
